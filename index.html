@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Endoscopy Report</title>
+  <style>
+    body {
+      display: flex;
+      font-family: Arial;
+    }
+
+    .left {
+      width: 50%;
+      padding: 20px;
+    }
+
+    .right {
+      width: 50%;
+      padding: 20px;
+    }
+
+    .image-container img {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="left">
+    <h2>Select Findings</h2>
+
+    <label>Esophagus</label>
+    <select id="esophagus">
+      <option>Normal</option>
+      <option>Small columns of varices</option>
+    </select>
+
+    <br><br>
+
+    <label>Stomach</label>
+    <select id="stomach">
+      <option>Normal</option>
+      <option>Erythematous mucosa</option>
+    </select>
+
+    <br><br>
+
+    <label>Impression</label>
+    <select id="impression">
+      <option>Normal</option>
+      <option>Grade I varices</option>
+    </select>
+
+    <br><br>
+
+    <input type="file" id="images" multiple />
+
+    <br><br>
+
+    <button onclick="generate()">Generate Report</button>
+
+  </div>
+
+  <div class="right">
+    <h2>Preview</h2>
+    <div id="preview"></div>
+  </div>
+
+<script src="renderer.js"></script>
+
+</body>
+</html>
