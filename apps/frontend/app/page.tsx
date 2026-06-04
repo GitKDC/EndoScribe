@@ -314,7 +314,7 @@ export default function Home() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
               <span style={{ fontSize: "24px" }}>📝</span>
               <h2 style={{ color: "#1a3a52", margin: 0, fontSize: "20px", fontWeight: "700" }}>
-                Report Generator
+                EndoScribe: Endoscopy Report Generator 
               </h2>
             </div>
 
