@@ -10,6 +10,7 @@ interface ReportFormProps {
   duodenum: string;
   impression: string;
   doctorName: string;
+  prefix: string;
   templates: {
     id: number;
     name: string;
@@ -29,16 +30,17 @@ interface ReportFormProps {
   onImpressionChange: (v: string) => void;
   onDoctorNameChange: (v: string) => void;
   onTemplateSelect: (templateId: number) => void;
+  setPrefix: (v: string) => void;
 }
 
 const ReportForm: React.FC<ReportFormProps> = ({
   patientName, patientAge, reportDate, reportType,
   esophagus, stomach, duodenum, impression, doctorName,
-  templates,
+  templates,prefix,
   onPatientNameChange, onPatientAgeChange, onReportDateChange,
   onReportTypeChange, onEsophagusChange, onStomachChange,
   onDuodenumChange, onImpressionChange, onDoctorNameChange,
-  onTemplateSelect,
+  onTemplateSelect,setPrefix
 }) => {
   const [activeField, setActiveField] = useState<string | null>(null);
 
@@ -90,6 +92,14 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const focus = (name: string) => () => setActiveField(name);
   const blur  = () => setActiveField(null);
 
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("M");
+
+  const updateAgeGender = (a: string, g: string) => {
+    const formatted = a ? `${a}Yrs/${g}` : "";
+    onPatientAgeChange(formatted);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
@@ -97,31 +107,69 @@ const ReportForm: React.FC<ReportFormProps> = ({
       <div style={sectionStyle}>
         <h4 style={headerStyle}><span>👤</span> Patient Information</h4>
 
+        {/* Row 1: Name + Age/Gender */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "14px" }}>
+
+          {/* Patient Name with Prefix */}
           <div style={{ flex: 2 }}>
             <label style={labelStyle}>Patient Name</label>
-            <input
-              type="text"
-              value={patientName}
-              onChange={(e) => onPatientNameChange(e.target.value)}
-              onFocus={focus("patientName")} onBlur={blur}
-              placeholder="e.g. Sunil Sharma"
-              style={inputStyle("patientName")}
-            />
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <select
+                value={prefix}
+                onChange={(e) => setPrefix(e.target.value)}
+                style={{ ...inputStyle("prefix"), width: "90px" }}
+              >
+                <option value="Mr">Mr</option>
+                <option value="Mrs">Mrs</option>
+                <option value="Ms">Ms</option>
+              </select>
+
+              <input
+                type="text"
+                value={patientName}
+                onChange={(e) => onPatientNameChange(e.target.value)}
+                placeholder="Patient Name"
+                style={{ ...inputStyle("patientName"), flex: 1 }}
+              />
+            </div>
           </div>
+
+          {/* Age + Gender */}
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Age / Gender</label>
-            <input
-              type="text"
-              value={patientAge}
-              onChange={(e) => onPatientAgeChange(e.target.value)}
-              onFocus={focus("patientAge")} onBlur={blur}
-              placeholder="35Yrs/M"
-              style={inputStyle("patientAge")}
-            />
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="number"
+                value={age}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAge(val);
+                  if (val) onPatientAgeChange(`${val}Yrs/${gender}`);
+                }}
+                placeholder="Age"
+                style={{ ...inputStyle("age"), flex: 1 }}
+              />
+
+              <select
+                value={gender}
+                onChange={(e) => {
+                  const g = e.target.value;
+                  setGender(g);
+                  if (age) onPatientAgeChange(`${age}Yrs/${g}`);
+                }}
+                style={{ ...inputStyle("gender"), width: "80px" }}
+              >
+                <option value="M">M</option>
+                <option value="F">F</option>
+              </select>
+            </div>
           </div>
+
         </div>
 
+        {/* Row 2: Date + Doctor */}
         <div style={{ display: "flex", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Date</label>
@@ -129,24 +177,30 @@ const ReportForm: React.FC<ReportFormProps> = ({
               type="date"
               value={reportDate}
               onChange={(e) => onReportDateChange(e.target.value)}
-              onFocus={focus("reportDate")} onBlur={blur}
+              onFocus={focus("reportDate")}
+              onBlur={blur}
               style={inputStyle("reportDate")}
             />
           </div>
+
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Doctor Name</label>
+
             <input
               type="text"
-              value={doctorName}
-              onChange={(e) => onDoctorNameChange(e.target.value)}
-              onFocus={focus("doctorName")} onBlur={blur}
-              placeholder="Dr. Name"
-              style={inputStyle("doctorName")}
+              value="Dr Hrushikesh P. Chaudhari"
+              disabled
+              style={{
+                ...inputStyle("doctorName"),
+                backgroundColor: "#f1f3f5",
+                color: "#495057",
+                cursor: "not-allowed",
+                fontWeight: "600"
+              }}
             />
           </div>
         </div>
       </div>
-
       {/* ── Report Details & Template ──────────────────────────────────── */}
       <div style={sectionStyle}>
         <h4 style={headerStyle}><span>📄</span> Report Details</h4>

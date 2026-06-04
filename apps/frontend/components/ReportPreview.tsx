@@ -18,6 +18,7 @@ interface ReportPreviewProps {
   impression: string;
   doctorName: string;
   images: ImageData[];
+  prefix: string;
 }
 
 const ReportPreview: React.FC<ReportPreviewProps> = ({
@@ -31,6 +32,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
   impression,
   doctorName,
   images,
+  prefix
 }) => {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "";
@@ -168,7 +170,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           >
             <p style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>
               {patientName
-                ? `${patientName}${patientAge ? `  ${patientAge}` : ""}`
+                ? `${prefix} ${patientName} ${patientAge}`
                 : "Patient Name"}
             </p>
           </div>
@@ -329,32 +331,67 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       <div
         style={{
           flexShrink: 0,
-          padding: "10px 24px",
-          borderTop: "1.5px solid #ccc",
+          padding: "8px 20px",
+          borderTop: "1px solid #ccc",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <div>
-          <p style={{ margin: 0, fontSize: "13px", fontWeight: "bold" }}>
-            {doctorName || "Dr Hrushikesh P. Chaudhari"}
-          </p>
-          <p style={{ margin: "2px 0 0 0", fontSize: "13px", fontWeight: "bold" }}>
-            DNB (Gen. Med.), DNB (Gastro.)
-          </p>
-          <p style={{ margin: "2px 0 0 0", fontSize: "13px", fontWeight: "bold" }}>
-            Consultant Gastroenterologist &amp; Therapeutic Endoscopist
-          </p>
+        {/* LEFT: Doctors */}
+        <div
+          style={{
+            display: "flex",
+            gap: "20px",
+            fontSize: "11.5px",
+            lineHeight: 1.3,
+          }}
+        >
+          {/* Doctor 1 */}
+          <div>
+            <p style={{ margin: 0, fontWeight: "600" }}>
+              Dr Hrushikesh P. Chaudhari
+            </p>
+            <p style={{ margin: 0 }}>
+              DNB (Gen. Med.), DNB (Gastro.)
+            </p>
+            <p style={{ margin: 0 }}>
+              Consultant Gastroenterologist & Therapeutic Endoscopist
+            </p>
+          </div>
+
+          {/* Doctor 2 */}
+          <div>
+            <p style={{ margin: 0, fontWeight: "600" }}>
+              Dr Assistant Doctor Name
+            </p>
+            <p style={{ margin: 0 }}>
+              DNB (Gen. Med.), DNB (Gastro.)
+            </p>
+            <p style={{ margin: 0 }}>
+              Consultant Gastroenterologist & Therapeutic Endoscopist
+            </p>
+          </div>
         </div>
+
+        {/* RIGHT: WEO */}
         <div style={{ textAlign: "right" }}>
           <img
             src="/images/weo.png"
             alt="WEO"
-            style={{ height: "38px", display: "block", marginLeft: "auto" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            style={{ height: "32px", display: "block", marginLeft: "auto" }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
           />
-          <p style={{ fontSize: "11px", color: "#2a7a2a", margin: "3px 0 0 0", fontWeight: "600" }}>
+          <p
+            style={{
+              fontSize: "10px",
+              color: "#2a7a2a",
+              margin: "2px 0 0 0",
+              fontWeight: "600",
+            }}
+          >
             Recognized by World Endoscopy Organization
           </p>
         </div>

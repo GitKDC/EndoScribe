@@ -84,6 +84,7 @@ export default function Home() {
   const [impression,  setImpression]  = useState("");
   const [doctorName,  setDoctorName]  = useState("Dr Your Name");
   const [images,      setImages]      = useState<ImageData[]>([]);
+  const [prefix, setPrefix] = useState("Mr");
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [printState,  setPrintState]  = useState<ActionState>("idle");
@@ -357,6 +358,8 @@ export default function Home() {
               onImpressionChange={setImpression}
               onDoctorNameChange={setDoctorName}
               onTemplateSelect={handleTemplateSelect}
+              prefix={prefix}
+              setPrefix={setPrefix}
             />
 
             {/* Image uploader */}
@@ -443,6 +446,7 @@ export default function Home() {
                 impression={impression}
                 doctorName={doctorName}
                 images={images}
+                prefix={prefix}
               />
             </div>
           </div>
