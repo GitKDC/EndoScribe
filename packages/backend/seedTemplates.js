@@ -20,7 +20,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // Run migrations first
-const migrationPath = path.join(__dirname, "migration.sql");
+const migrationPath = path.join(__dirname, "db", "migration.sql");
 if (fs.existsSync(migrationPath)) {
   const migration = fs.readFileSync(migrationPath, "utf-8");
   db.exec(migration, (err) => {

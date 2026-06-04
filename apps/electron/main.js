@@ -70,11 +70,11 @@ async function initializeApp() {
   try {
     // Initialize database
     console.log("🔵 Initializing database...");
-    db = require("../backend/db/db");
+    db = require("../../packages/backend/db/db");
 
     // Register IPC handlers
     console.log("🔵 Registering IPC handlers...");
-    registerReportHandlers = require("../backend/ipc/reportHandlers");
+    registerReportHandlers = require("../../packages/backend/ipc/reportHandlers");
     registerReportHandlers.registerReportHandlers();
 
     console.log("✅ App initialized successfully");
