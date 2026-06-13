@@ -7,32 +7,40 @@ interface ImageData {
   nbiLabel?: string;
 }
 
+interface Section {
+  title: string;
+  content: string;
+  highlight?: boolean;
+  isHeading?: boolean;
+}
+
 interface ReportPreviewProps {
   patientName: string;
   patientAge: string;
   reportDate: string;
   reportType: string;
-  esophagus: string;
-  stomach: string;
-  duodenum: string;
-  impression: string;
+  sections: Section[];
   doctorName: string;
   images: ImageData[];
   prefix: string;
 }
+
+// Maps internal report type codes to the display title shown on the report
+const REPORT_TITLE_MAP: Record<string, string> = {
+  UGI: "UPPER GI ENDOSCOPY",
+  VLS: "VLS SCOPY",
+  SIGMOIDOSCOPY: "SIGMOIDOSCOPY",
+};
 
 const ReportPreview: React.FC<ReportPreviewProps> = ({
   patientName,
   patientAge,
   reportDate,
   reportType,
-  esophagus,
-  stomach,
-  duodenum,
-  impression,
+  sections,
   doctorName,
   images,
-  prefix
+  prefix,
 }) => {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "";
@@ -44,20 +52,26 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
     ].join("/");
   };
 
-  const totalLen =
-    (esophagus?.length  || 0) +
-    (stomach?.length    || 0) +
-    (duodenum?.length   || 0) +
-    (impression?.length || 0);
+  // Only sections with actual content (or marked headings) are rendered
+  const visibleSections = sections.filter(
+    (s) => s.isHeading || (s.content && s.content.trim() !== "")
+  );
+
+  const totalLen = visibleSections.reduce(
+    (sum, s) => sum + (s.content?.length || 0),
+    0
+  );
 
   const bodyFont = totalLen > 700 ? "13px" : totalLen > 450 ? "14px" : "15px";
   const lineH    = totalLen > 700 ? 1.4   : totalLen > 450 ? 1.45  : 1.5;
   const paraGap  = totalLen > 700 ? "8px" : "11px";
 
   // Images 1-4 → right column stacked
-  // Images 5-6 → below text in left column (same layout as reference image 2)
+  // Images 5-6 → below text in left column
   const rightImages  = images.slice(0, 4);
   const bottomImages = images.slice(4, 6);
+
+  const displayTitle = REPORT_TITLE_MAP[reportType] || reportType || "UPPER GI ENDOSCOPY";
 
   const NbiLabel = ({ label }: { label?: string }) =>
     label ? (
@@ -175,7 +189,8 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             </p>
           </div>
 
-          {/* Report title */}
+          {/* Report title — maps internal codes (UGI/VLS/SIGMOIDOSCOPY) to
+              the full display title shown on the printed report */}
           <div style={{ flexShrink: 0, marginBottom: "10px" }}>
             <h2
               style={{
@@ -189,63 +204,98 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 letterSpacing: "0.5px",
               }}
             >
-              {reportType || "UPPER GI ENDOSCOPY"}
+              {displayTitle}
             </h2>
           </div>
 
-          {/* Clinical text */}
-          <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-            {esophagus && (
-              <p style={{ margin: `0 0 ${paraGap} 0` }}>
-                <strong>Esophagus:-</strong> {esophagus}
-              </p>
-            )}
-            {stomach && (
-              <p style={{ margin: `0 0 ${paraGap} 0` }}>
-                <strong>Stomach:-</strong> {stomach}
-              </p>
-            )}
-            {duodenum && (
-              <>
-                <p style={{ margin: `0 0 ${paraGap} 0` }}>
-                  <strong>Duodenal Cap:-</strong> {duodenum}
+          {/* Clinical text — only sections with non-empty content (or
+              isHeading sections, e.g. "DILATATION"/"POST DILATATION") are
+              shown, so any field the user leaves blank simply disappears
+              from the preview/print/PDF */}
+          <div style={{ flex: 1, overflow: "hidden" }}>
+            {visibleSections.map((section, index) =>
+              section.isHeading ? (
+                // Boxed sub-heading, e.g. "DILATATION ▶" / "POST DILATATION ▶"
+                <div
+                  key={index}
+                  style={{
+                    display: "block",
+                    width: "fit-content",
+                    border: "1.5px solid #c0392b",
+                    color: "#c0392b",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    fontSize: bodyFont,
+                    letterSpacing: "0.5px",
+                    padding: "3px 28px 3px 10px",
+                    margin: "4px 0 8px 0",
+                    position: "relative",
+                  }}
+                >
+                  {section.title}
+                  <span
+                    style={{
+                      position: "absolute",
+                      right: "6px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      fontSize: "11px",
+                    }}
+                  >
+                    ▶
+                  </span>
+                </div>
+              ) : (
+                <p
+                  key={index}
+                  style={{
+                    marginBottom: "10px",
+                    color: section.highlight ? "#c0392b" : "#111",
+                    fontWeight: section.highlight ? "bold" : "normal",
+                  }}
+                >
+                  <strong>{section.title}:- </strong>
+                  <span
+                    style={{ whiteSpace: "pre-line" }}
+                    dangerouslySetInnerHTML={{
+                      __html: section.content
+                        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                        .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                    }}
+                  />
                 </p>
-                <p style={{ margin: `0 0 ${paraGap} 0` }}>
-                  <strong>II<sup>nd</sup> Part of Duodenum:-</strong> {duodenum}
-                </p>
-              </>
-            )}
-            {impression && (
-              <div style={{ marginTop: "12px" }}>
-                <p style={{ margin: "0 0 5px 0", fontWeight: "bold" }}>
-                  Impression:-
-                </p>
-                <p style={{ margin: 0, fontWeight: "bold", whiteSpace: "pre-line" }}>
-                  {impression}
-                </p>
-              </div>
+              )
             )}
           </div>
 
-          {/* Images 5-6: side by side below text */}
+          {/* Images 5-6: side by side below text — fixed width so a single
+              leftover image doesn't stretch to fill the row.
+              Pushed to bottom via marginTop:auto so it aligns with the
+              bottom of the right-column image stack, with matching gap
+              above the footer. Height reduced so images aren't vertically
+              stretched relative to their width (matches right-column shape). */}
           {bottomImages.length > 0 && (
             <div
               style={{
                 flexShrink: 0,
                 display: "flex",
                 gap: "8px",
-                marginTop: "10px",
-                height: "155px",
-                marginBottom: "20px",
+                marginTop: "auto",
+                marginBottom: "16px",
+                height: "150px",
               }}
             >
-              {bottomImages.map((img) => (
+              {bottomImages.map((img, idx) => (
                 <div
                   key={img.id}
                   style={{
-                    flex: 1,
+                    flex: "0 0 calc(50% - 4px)",
+                    maxWidth: "calc(50% - 4px)",
                     position: "relative",
                     overflow: "hidden",
+                    // When only one bottom image exists, push it to the
+                    // right-hand slot instead of the default left slot.
+                    marginLeft: bottomImages.length === 1 && idx === 0 ? "auto" : undefined,
                   }}
                 >
                   <img
@@ -269,7 +319,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               flexDirection: "column",
               gap: "6px",
               overflow: "hidden",
-              marginBottom: "40px"
+              marginBottom: "16px",
             }}
           >
             {/* Date shown at top of right column, aligned with left's patient row */}
@@ -363,7 +413,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           {/* Doctor 2 */}
           <div>
             <p style={{ margin: 0, fontWeight: "600" }}>
-              Dr Assistant Doctor Name
+              Dr Vaibhav Lamdhade
             </p>
             <p style={{ margin: 0 }}>
               DNB (Gen. Med.), DNB (Gastro.)

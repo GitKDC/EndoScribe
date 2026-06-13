@@ -5,7 +5,13 @@ const getTemplates = (db) => {
         console.error("❌ DB Error in getTemplates:", err);
         reject(new Error("Failed to fetch templates: " + err.message));
       } else {
-        const templates = rows || [];
+        const templates = (rows || []).map((row) => {
+          return {
+            ...row,
+            sections: row.sections ? JSON.parse(row.sections) : null, // 🔥 NEW
+          };
+        });
+
         console.log(`✅ Database returned ${templates.length} templates`);
         resolve(templates);
       }
@@ -28,15 +34,20 @@ const getTemplate = (id, db) => {
         reject(new Error("Template not found"));
       } else {
         console.log(`✅ Database returned template: ${row.name}`);
+
+        // 🔥 NEW: parse sections if exists
+        row.sections = row.sections ? JSON.parse(row.sections) : null;
+
         resolve(row);
       }
     });
   });
 };
 
+// 🔥 UPDATED: supports both OLD + NEW
 const createTemplate = (data, db) => {
   return new Promise((resolve, reject) => {
-    const { name, category, esophagus, stomach, duodenum, impression } = data;
+    const { name, category, sections } = data;
 
     if (!name || !category) {
       reject(new Error("Name and category are required"));
@@ -44,18 +55,21 @@ const createTemplate = (data, db) => {
     }
 
     const stmt = db.prepare(
-      "INSERT INTO templates (name, category, esophagus, stomach, duodenum, impression) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO templates (name, category, sections) VALUES (?, ?, ?)"
     );
 
-    stmt.run([name, category, esophagus, stomach, duodenum, impression], function (err) {
-      if (err) {
-        console.error("❌ DB Error in createTemplate:", err);
-        reject(new Error("Failed to create template: " + err.message));
-      } else {
-        console.log(`✅ Template created with ID: ${this.lastID}`);
-        resolve({ id: this.lastID, ...data });
+    stmt.run(
+      [name, category, JSON.stringify(sections || [])],
+      function (err) {
+        if (err) {
+          console.error("❌ DB Error in createTemplate:", err);
+          reject(new Error("Failed to create template: " + err.message));
+        } else {
+          console.log(`✅ Template created with ID: ${this.lastID}`);
+          resolve({ id: this.lastID, ...data });
+        }
       }
-    });
+    );
   });
 };
 

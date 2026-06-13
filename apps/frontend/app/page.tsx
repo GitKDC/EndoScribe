@@ -13,10 +13,11 @@ type Template = {
   id: number;
   name: string;
   category: string;
-  esophagus: string;
-  stomach: string;
-  duodenum: string;
-  impression: string;
+  sections: {
+    title: string;
+    content: string;
+    highlight?: boolean;
+  }[];
 };
 
 type ImageData = {
@@ -47,20 +48,13 @@ const FALLBACK_TEMPLATES: Template[] = [
   {
     id: 1,
     name: "Normal Study",
-    category: "normal",
-    esophagus: "Normal",
-    stomach: "Normal",
-    duodenum: "Normal",
-    impression: "Normal study",
-  },
-  {
-    id: 2,
-    name: "Varices Grade I",
-    category: "varices",
-    esophagus: "Small columns of varices with Red wale sign",
-    stomach: "Erythematous mucosa",
-    duodenum: "Normal",
-    impression: "Grade I varices",
+    category: "UGI",
+    sections: [
+      { title: "Esophagus", content: "Normal" },
+      { title: "Stomach", content: "Normal" },
+      { title: "Duodenum", content: "Normal" },
+      { title: "Impression", content: "Normal study", highlight: true },
+    ],
   },
 ];
 
@@ -77,11 +71,7 @@ export default function Home() {
   const [patientName, setPatientName] = useState("");
   const [patientAge,  setPatientAge]  = useState("");
   const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
-  const [reportType,  setReportType]  = useState("UPPER GI ENDOSCOPY");
-  const [esophagus,   setEsophagus]   = useState("");
-  const [stomach,     setStomach]     = useState("");
-  const [duodenum,    setDuodenum]    = useState("");
-  const [impression,  setImpression]  = useState("");
+  const [reportType,  setReportType]  = useState("UGI");
   const [doctorName,  setDoctorName]  = useState("Dr Your Name");
   const [images,      setImages]      = useState<ImageData[]>([]);
   const [prefix, setPrefix] = useState("Mr");
@@ -92,6 +82,10 @@ export default function Home() {
   const [imgState,    setImgState]    = useState<ActionState>("idle");
   const [toasts,      setToasts]      = useState<ToastMessage[]>([]);
   const [mounted,     setMounted]     = useState(false);
+
+  const [sections, setSections] = useState<
+    { title: string; content: string; highlight?: boolean }[]
+  >([]);
 
   // Mount animation
   useEffect(() => { setMounted(true); }, []);
@@ -128,6 +122,12 @@ export default function Home() {
     loadTemplates();
   }, []);
 
+  // ── Report type change — clears sections so old content doesn't bleed across types
+  const handleReportTypeChange = (val: string) => {
+    setReportType(val);
+    setSections([]);
+  };
+
   // ── Template selection ───────────────────────────────────────────────────────
   const handleTemplateSelect = async (id: number) => {
     try {
@@ -138,10 +138,8 @@ export default function Home() {
         template = await (window as any).api.getTemplate(id);
       }
       if (template) {
-        setEsophagus(template.esophagus || "");
-        setStomach(template.stomach     || "");
-        setDuodenum(template.duodenum   || "");
-        setImpression(template.impression || "");
+        setSections(template.sections || []);
+        setReportType(template.category);
       }
     } catch (err) {
       console.error("Template load error:", err);
@@ -159,11 +157,8 @@ export default function Home() {
     setPatientName("");
     setPatientAge("");
     setReportDate(getCurrentDateForInput());
-    setReportType("UPPER GI ENDOSCOPY");
-    setEsophagus("");
-    setStomach("");
-    setDuodenum("");
-    setImpression("");
+    setReportType("UGI");
+    setSections([]);
     setImages([]);
     addToast("Form cleared", "success");
   };
@@ -342,21 +337,14 @@ export default function Home() {
               patientAge={patientAge}
               reportDate={reportDate}
               reportType={reportType}
-              esophagus={esophagus}
-              stomach={stomach}
-              duodenum={duodenum}
-              impression={impression}
               doctorName={doctorName}
               templates={templates}
+              sections={sections}
+              setSections={setSections}
               onPatientNameChange={setPatientName}
               onPatientAgeChange={setPatientAge}
               onReportDateChange={setReportDate}
-              onReportTypeChange={setReportType}
-              onEsophagusChange={setEsophagus}
-              onStomachChange={setStomach}
-              onDuodenumChange={setDuodenum}
-              onImpressionChange={setImpression}
-              onDoctorNameChange={setDoctorName}
+              onReportTypeChange={handleReportTypeChange}
               onTemplateSelect={handleTemplateSelect}
               prefix={prefix}
               setPrefix={setPrefix}
@@ -440,10 +428,7 @@ export default function Home() {
                 patientAge={patientAge}
                 reportDate={reportDate}
                 reportType={reportType}
-                esophagus={esophagus}
-                stomach={stomach}
-                duodenum={duodenum}
-                impression={impression}
+                sections={sections}
                 doctorName={doctorName}
                 images={images}
                 prefix={prefix}

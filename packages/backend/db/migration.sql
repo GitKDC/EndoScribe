@@ -2,10 +2,7 @@ CREATE TABLE IF NOT EXISTS templates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
   category TEXT,
-  esophagus TEXT,
-  stomach TEXT,
-  duodenum TEXT,
-  impression TEXT,
+  sections TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -15,10 +12,9 @@ CREATE TABLE IF NOT EXISTS reports (
   age INTEGER,
   gender TEXT,
   template_id INTEGER,
-  esophagus TEXT,
-  stomach TEXT,
-  duodenum TEXT,
-  impression TEXT,
+
+  sections TEXT,  
+
   pdf_path TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
