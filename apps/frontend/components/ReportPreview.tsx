@@ -250,7 +250,12 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                   key={index}
                   style={{
                     marginBottom: "10px",
-                    color: section.highlight ? "#c0392b" : "#111",
+                    color:
+                      section.title.toLowerCase() === "impression"
+                        ? "#111"
+                        : section.highlight
+                        ? "#c0392b"
+                        : "#111",
                     fontWeight: section.highlight ? "bold" : "normal",
                   }}
                 >
