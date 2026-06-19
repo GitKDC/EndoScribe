@@ -4,11 +4,14 @@ interface ImageData {
   id: string;
   url: string;
   label: string;
+  brightness?: number;
+  contrast?: number;
 }
 
 interface ImageUploaderProps {
   images: ImageData[];
   onImagesAdded: (images: ImageData[]) => void;
+  onImagesUpdated: (images: ImageData[]) => void;
   onImageRemoved: (id: string) => void;
   onImageLabelChanged: (id: string, label: string) => void;
   maxImages?: number;
@@ -17,6 +20,7 @@ interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   images,
   onImagesAdded,
+  onImagesUpdated,
   onImageRemoved,
   onImageLabelChanged,
   maxImages = 6,
@@ -32,6 +36,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       id: `${Date.now()}-${index}`,
       url: URL.createObjectURL(file),
       label: `Image ${images.length + index + 1}`,
+      brightness: 100,
+      contrast: 100,
     }));
 
     onImagesAdded(newImages);
@@ -116,6 +122,43 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     fontSize: 11,
                   }}
                 />
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
+                  <label style={{ fontSize: 10 }}>Brightness</label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="150"
+                    value={img.brightness || 100}
+                    onChange={(e) => {
+                      const updated = images.map((i) =>
+                        i.id === img.id
+                          ? { ...i, brightness: Number(e.target.value) }
+                          : i
+                      );
+
+                      onImagesUpdated(updated);
+                    }}
+                  />
+
+                  <label style={{ fontSize: 10 }}>Contrast</label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="150"
+                    value={img.contrast || 100}
+                    onChange={(e) => {
+                      const updated = images.map((i) =>
+                        i.id === img.id
+                          ? { ...i, contrast: Number(e.target.value) }
+                          : i
+                      );
+
+                      onImagesUpdated(updated);
+                    }}
+                  />
+                </div>
+
                 <button
                   onClick={() => onImageRemoved(img.id)}
                   style={{

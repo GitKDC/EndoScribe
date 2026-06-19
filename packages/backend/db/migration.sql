@@ -25,3 +25,14 @@ CREATE TABLE IF NOT EXISTS images (
   file_path TEXT,
   position INTEGER
 );
+
+
+CREATE TABLE IF NOT EXISTS doctors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,                
+  qualifications TEXT,               
+  designation TEXT,                  
+  is_default INTEGER DEFAULT 0,      
+  display_order INTEGER DEFAULT 0,  
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

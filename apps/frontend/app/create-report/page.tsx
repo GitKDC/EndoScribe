@@ -1,0 +1,504 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import ReportForm from "@/components/ReportForm";
+import ImageUploader from "@/components/ImageUploader";
+import ReportPreview from "@/components/ReportPreview";
+import { generatePDF, printReport, exportAsImage } from "@/utils/reportGenerator";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────────────────────
+type Template = {
+  id: number;
+  name: string;
+  category: string;
+  sections: {
+    title: string;
+    content: string;
+    highlight?: boolean;
+  }[];
+};
+
+type Doctor = {
+  id: number;
+  name: string;
+  qualifications?: string;
+  designation?: string;
+  is_default?: number;
+  display_order?: number;
+};
+
+type ImageData = {
+  id: string;
+  url: string;
+  label: string;
+};
+
+type ActionState = "idle" | "loading" | "success" | "error";
+type ToastMessage = { id: number; text: string; type: "success" | "error" };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+const getCurrentDateForInput = (): string => {
+  const today = new Date();
+  return [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FALLBACK TEMPLATES (when Electron API is unavailable)
+// ─────────────────────────────────────────────────────────────────────────────
+const FALLBACK_TEMPLATES: Template[] = [
+  {
+    id: 1,
+    name: "Normal Study",
+    category: "UGI",
+    sections: [
+      { title: "Esophagus", content: "Normal" },
+      { title: "Stomach", content: "Normal" },
+      { title: "Duodenum", content: "Normal" },
+      { title: "Impression", content: "Normal study", highlight: true },
+    ],
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOME
+// ─────────────────────────────────────────────────────────────────────────────
+export default function Home() {
+  // ── Template loading ────────────────────────────────────────────────────────
+  const [templates, setTemplates]   = useState<Template[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [loadError, setLoadError]   = useState<string | null>(null);
+
+  // ── Report fields ───────────────────────────────────────────────────────────
+  const [patientName, setPatientName] = useState("");
+  const [patientAge,  setPatientAge]  = useState("");
+  const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
+  const [reportType,  setReportType]  = useState("UGI");
+  const [doctorName,  setDoctorName]  = useState("Dr Your Name");
+  const [images,      setImages]      = useState<ImageData[]>([]);
+  const [prefix, setPrefix] = useState("Mr");
+
+  // 🔥 NEW: doctors selected for this report's footer
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedDoctorIds, setSelectedDoctorIds] = useState<number[]>([]);
+
+  // ── UI state ─────────────────────────────────────────────────────────────────
+  const [printState,  setPrintState]  = useState<ActionState>("idle");
+  const [pdfState,    setPdfState]    = useState<ActionState>("idle");
+  const [imgState,    setImgState]    = useState<ActionState>("idle");
+  const [toasts,      setToasts]      = useState<ToastMessage[]>([]);
+  const [mounted,     setMounted]     = useState(false);
+
+  const [sections, setSections] = useState<
+    { title: string; content: string; highlight?: boolean }[]
+  >([]);
+
+  // Mount animation
+  useEffect(() => { setMounted(true); }, []);
+
+  // ── Toast system ─────────────────────────────────────────────────────────────
+  const addToast = useCallback((text: string, type: "success" | "error") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, text, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
+  }, []);
+
+  // ── Load templates ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        setLoading(true);
+        setLoadError(null);
+        if (!(window as any).api) {
+          setTemplates(FALLBACK_TEMPLATES);
+          return;
+        }
+        const data = await (window as any).api.getTemplates();
+        if (!data || data.length === 0) throw new Error("No templates found");
+        setTemplates(data);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load templates");
+        setTemplates(FALLBACK_TEMPLATES); // always fall back so UI isn't blocked
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTemplates();
+  }, []);
+
+  // 🔥 NEW: load doctors (used to resolve selectedDoctorIds → full doctor objects for preview)
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        if (!(window as any).api) return;
+        const data = await (window as any).api.getDoctors();
+        setDoctors(data || []);
+      } catch (err) {
+        console.error("Failed to load doctors:", err);
+      }
+    };
+    loadDoctors();
+  }, []);
+
+  // ── Report type change — clears sections so old content doesn't bleed across types
+  const handleReportTypeChange = (val: string) => {
+    setReportType(val);
+    setSections([]);
+  };
+
+  // ── Template selection ───────────────────────────────────────────────────────
+  const handleTemplateSelect = async (id: number) => {
+    try {
+      let template: Template | undefined;
+      if (!(window as any).api) {
+        template = templates.find((t) => t.id === id);
+      } else {
+        template = await (window as any).api.getTemplate(id);
+      }
+      if (template) {
+        setSections(template.sections || []);
+        setReportType(template.category);
+      }
+    } catch (err) {
+      console.error("Template load error:", err);
+    }
+  };
+
+  // ── Image handlers ───────────────────────────────────────────────────────────
+  const handleImagesAdded      = (newImgs: ImageData[]) => setImages((p) => [...p, ...newImgs]);
+  const handleImagesUpdated = (updated: ImageData[]) => {
+    setImages(updated);
+  };
+  const handleImageRemoved     = (id: string) => setImages((p) => p.filter((i) => i.id !== id));
+  const handleImageLabelChanged = (id: string, label: string) =>
+    setImages((p) => p.map((i) => (i.id === id ? { ...i, label } : i)));
+
+  // ── Reset ────────────────────────────────────────────────────────────────────
+  const handleReset = () => {
+    setPatientName("");
+    setPatientAge("");
+    setReportDate(getCurrentDateForInput());
+    setReportType("UGI");
+    setSections([]);
+    setImages([]);
+    // Reset doctor selection back to defaults
+    const defaults = doctors.filter((d) => d.is_default).map((d) => d.id);
+    setSelectedDoctorIds(defaults);
+    addToast("Form cleared", "success");
+  };
+
+  // ── Action button wrapper ─────────────────────────────────────────────────────
+  const runAction = async (
+    setState: (s: ActionState) => void,
+    fn: () => Promise<void>,
+    successMsg: string,
+    errorMsg: string
+  ) => {
+    setState("loading");
+    try {
+      await fn();
+      setState("success");
+      addToast(successMsg, "success");
+    } catch (err) {
+      setState("error");
+      addToast(
+        `${errorMsg}: ${err instanceof Error ? err.message : String(err)}`,
+        "error"
+      );
+      console.error(err);
+    } finally {
+      setTimeout(() => setState("idle"), 2000);
+    }
+  };
+
+  const handlePrint       = () => runAction(setPrintState, printReport,                    "Sent to printer ✓",     "Print failed");
+  const handleDownloadPDF = () => runAction(setPdfState,   () => generatePDF(reportDate, patientName, reportType, patientAge),  "PDF downloaded ✓",      "PDF failed");
+  const handleExportImage = () => runAction(setImgState,   () => exportAsImage(reportDate, patientName, reportType, patientAge),"Image exported ✓",      "Export failed");
+
+  // 🔥 NEW: resolve selected doctor IDs into full doctor objects, in the
+  // order they were selected, for the preview footer.
+  const selectedDoctorObjects = selectedDoctorIds
+    .map((id) => doctors.find((d) => d.id === id))
+    .filter((d): d is Doctor => Boolean(d));
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STYLES
+  // ─────────────────────────────────────────────────────────────────────────────
+  const btnBase: React.CSSProperties = {
+    padding: "13px",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+    transition: "transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    letterSpacing: "0.3px",
+  };
+
+  const btnHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 18px rgba(0,0,0,0.2)";
+  };
+  const btnLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
+  };
+
+  const getLabel = (state: ActionState, idle: string, loading: string, success: string) => {
+    if (state === "loading") return <><Spinner />{loading}</>;
+    if (state === "success") return <>{"\u2713"} {success}</>;
+    return <>{idle}</>;
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LOADING SCREEN
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        minHeight: "100vh", backgroundColor: "#eef2f5", flexDirection: "column", gap: "16px"
+      }}>
+        <div style={{
+          width: "44px", height: "44px", border: "4px solid #dee2e6",
+          borderTop: "4px solid #1a3a52", borderRadius: "50%",
+          animation: "spin 0.8s linear infinite"
+        }} />
+        <h2 style={{ color: "#1a3a52", fontWeight: 600, margin: 0 }}>Loading templates…</h2>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // MAIN RENDER
+  // ─────────────────────────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* ── Global animations ─────────────────────────────────────────────── */}
+      <style>{`
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        @keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(40px); } }
+        input:focus, textarea:focus, select:focus {
+          outline: none !important;
+          border-color: #0d6efd !important;
+          box-shadow: 0 0 0 3px rgba(13,110,253,0.18) !important;
+        }
+      `}</style>
+
+      {/* ── Toast stack ───────────────────────────────────────────────────── */}
+      <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 9999, display: "flex", flexDirection: "column", gap: "8px" }}>
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            style={{
+              padding: "10px 18px",
+              borderRadius: "8px",
+              backgroundColor: t.type === "success" ? "#198754" : "#dc3545",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: 500,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+              animation: "toastIn 0.3s ease",
+              minWidth: "220px",
+              maxWidth: "320px",
+            }}
+          >
+            {t.type === "success" ? "✓ " : "✕ "}{t.text}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ backgroundColor: "#eef2f5", height: "100vh", overflow: "hidden", animation: mounted ? "fadeIn 0.4s ease" : "none" }}>
+        <div style={{ display: "flex", height: "100%" }}>
+
+          {/* ── LEFT PANEL ─────────────────────────────────────────────────── */}
+          <div
+            style={{
+              width: "35%",
+              minWidth: "400px",
+              padding: "24px",
+              backgroundColor: "#f8f9fa",
+              overflowY: "auto",
+              borderRight: "1px solid #dee2e6",
+              boxShadow: "4px 0 14px rgba(0,0,0,0.06)",
+              zIndex: 10,
+              animation: mounted ? "slideIn 0.35s ease" : "none",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
+              <span style={{ fontSize: "24px" }}>📝</span>
+              <h2 style={{ color: "#1a3a52", margin: 0, fontSize: "20px", fontWeight: "700" }}>
+                EndoScribe: Endoscopy Report Generator 
+              </h2>
+            </div>
+
+            {/* Error banner (dismissible) */}
+            {loadError && (
+              <div style={{
+                padding: "10px 14px", backgroundColor: "#fff3cd", color: "#856404",
+                borderRadius: "8px", marginBottom: "16px", border: "1px solid #ffc107",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                fontSize: "13px", animation: "fadeIn 0.3s ease",
+              }}>
+                <span>⚠️ {loadError} — using default templates.</span>
+                <button
+                  onClick={() => setLoadError(null)}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#856404", padding: "0 4px" }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {/* Form */}
+            <ReportForm
+              patientName={patientName}
+              patientAge={patientAge}
+              reportDate={reportDate}
+              reportType={reportType}
+              doctorName={doctorName}
+              templates={templates}
+              sections={sections}
+              setSections={setSections}
+              selectedDoctorIds={selectedDoctorIds}
+              setSelectedDoctorIds={setSelectedDoctorIds}
+              onPatientNameChange={setPatientName}
+              onPatientAgeChange={setPatientAge}
+              onReportDateChange={setReportDate}
+              onReportTypeChange={handleReportTypeChange}
+              onTemplateSelect={handleTemplateSelect}
+              prefix={prefix}
+              setPrefix={setPrefix}
+            />
+
+            {/* Image uploader */}
+            <div style={{ marginTop: "18px" }}>
+              <ImageUploader
+                images={images}
+                onImagesAdded={handleImagesAdded}
+                onImagesUpdated={handleImagesUpdated}
+                onImageRemoved={handleImageRemoved}
+                onImageLabelChanged={handleImageLabelChanged}
+                maxImages={12}
+              />
+            </div>
+
+            {/* ── Action buttons ─────────────────────────────────────────── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "28px" }}>
+              <button
+                onClick={handlePrint}
+                disabled={printState === "loading"}
+                onMouseEnter={btnHover} onMouseLeave={btnLeave}
+                style={{ ...btnBase, backgroundColor: printState === "success" ? "#157347" : "#0d6efd", opacity: printState === "loading" ? 0.75 : 1 }}
+              >
+                {getLabel(printState, "🖨️ Print", "Printing…", "Printed")}
+              </button>
+
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfState === "loading"}
+                onMouseEnter={btnHover} onMouseLeave={btnLeave}
+                style={{ ...btnBase, backgroundColor: pdfState === "success" ? "#157347" : "#198754", opacity: pdfState === "loading" ? 0.75 : 1 }}
+              >
+                {getLabel(pdfState, "📥 PDF", "Generating…", "Saved")}
+              </button>
+
+              <button
+                onClick={handleExportImage}
+                disabled={imgState === "loading"}
+                onMouseEnter={btnHover} onMouseLeave={btnLeave}
+                style={{ ...btnBase, backgroundColor: "#0dcaf0", color: "#000", opacity: imgState === "loading" ? 0.75 : 1 }}
+              >
+                {getLabel(imgState, "🖼️ Image", "Exporting…", "Exported")}
+              </button>
+
+              <button
+                onClick={handleReset}
+                onMouseEnter={btnHover} onMouseLeave={btnLeave}
+                style={{ ...btnBase, backgroundColor: "#6c757d" }}
+              >
+                🔄 Reset
+              </button>
+            </div>
+          </div>
+
+          {/* ── RIGHT PANEL – A4 preview ──────────────────────────────────── */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              backgroundColor: "#dbe0e5",
+              padding: "40px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
+            <div
+              style={{
+                width: "210mm",
+                minHeight: "297mm",
+                backgroundColor: "white",
+                boxShadow: "0 12px 36px rgba(0,0,0,0.18)",
+                borderRadius: "2px",
+                margin: "0 auto",
+                transition: "box-shadow 0.2s ease",
+              }}
+            >
+              <ReportPreview
+                patientName={patientName}
+                patientAge={patientAge}
+                reportDate={reportDate}
+                reportType={reportType}
+                sections={sections}
+                doctorName={doctorName}
+                images={images}
+                prefix={prefix}
+                selectedDoctors={selectedDoctorObjects}
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INLINE SPINNER COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+const Spinner = () => (
+  <span
+    style={{
+      display: "inline-block",
+      width: "14px",
+      height: "14px",
+      border: "2px solid rgba(255,255,255,0.35)",
+      borderTop: "2px solid white",
+      borderRadius: "50%",
+      animation: "spin 0.7s linear infinite",
+      flexShrink: 0,
+    }}
+  />
+);

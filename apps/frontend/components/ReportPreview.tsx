@@ -5,6 +5,8 @@ interface ImageData {
   url: string;
   label: string;
   nbiLabel?: string;
+  brightness?: number;
+  contrast?: number;
 }
 
 interface Section {
@@ -12,6 +14,13 @@ interface Section {
   content: string;
   highlight?: boolean;
   isHeading?: boolean;
+}
+
+interface Doctor {
+  id: number;
+  name: string;
+  qualifications?: string;
+  designation?: string;
 }
 
 interface ReportPreviewProps {
@@ -23,6 +32,8 @@ interface ReportPreviewProps {
   doctorName: string;
   images: ImageData[];
   prefix: string;
+  // 🔥 NEW: doctors to render in the footer, in order
+  selectedDoctors?: Doctor[];
 }
 
 // Maps internal report type codes to the display title shown on the report
@@ -30,7 +41,25 @@ const REPORT_TITLE_MAP: Record<string, string> = {
   UGI: "UPPER GI ENDOSCOPY",
   VLS: "VLS SCOPY",
   SIGMOIDOSCOPY: "SIGMOIDOSCOPY",
+  COLONOSCOPY: "COLONOSCOPY",
 };
+
+// Fallback doctors used only if none are selected/passed — keeps old
+// behaviour intact so existing reports never render an empty footer.
+const FALLBACK_DOCTORS: Doctor[] = [
+  {
+    id: -1,
+    name: "Dr Hrushikesh P. Chaudhari",
+    qualifications: "DNB (Gen. Med.), DNB (Gastro.)",
+    designation: "Consultant Gastroenterologist & Therapeutic Endoscopist",
+  },
+  {
+    id: -2,
+    name: "Dr Vaibhav Lamdhade",
+    qualifications: "DNB (Gen. Med.), DNB (Gastro.)",
+    designation: "Consultant Gastroenterologist & Therapeutic Endoscopist",
+  },
+];
 
 const ReportPreview: React.FC<ReportPreviewProps> = ({
   patientName,
@@ -41,6 +70,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
   doctorName,
   images,
   prefix,
+  selectedDoctors,
 }) => {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "";
@@ -73,6 +103,10 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
 
   const displayTitle = REPORT_TITLE_MAP[reportType] || reportType || "UPPER GI ENDOSCOPY";
 
+  // Builds the CSS filter string for a given image's brightness/contrast.
+  const filterFor = (img: ImageData) =>
+    `brightness(${(img.brightness ?? 100) / 100}) contrast(${(img.contrast ?? 100) / 100})`;
+
   const NbiLabel = ({ label }: { label?: string }) =>
     label ? (
       <span
@@ -93,6 +127,12 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
         {label}
       </span>
     ) : null;
+
+  // 🔥 NEW: which doctors actually render in the footer — falls back to
+  // the original hardcoded two doctors if nothing was selected, so this
+  // change is fully backward compatible.
+  const footerDoctors =
+    selectedDoctors && selectedDoctors.length > 0 ? selectedDoctors : FALLBACK_DOCTORS;
 
   return (
     /*
@@ -143,12 +183,6 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       </div>
 
       {/* ── BODY — fills all space between header and footer ────────────── */}
-      {/*
-        The entire body is ONE flex row: left column + right column.
-        Left column holds: patient row, title, clinical text, bottom images.
-        Right column holds: images 1-4, starting from the very top (level with date).
-        This lets the right images reach all the way up to the date line.
-      */}
       <div
         style={{
           flex: 1,
@@ -184,13 +218,12 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           >
             <p style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>
               {patientName
-                ? `${prefix} ${patientName} ${patientAge}`
+                ? `${prefix} ${patientName} - ${patientAge}`
                 : "Patient Name"}
             </p>
           </div>
 
-          {/* Report title — maps internal codes (UGI/VLS/SIGMOIDOSCOPY) to
-              the full display title shown on the printed report */}
+          {/* Report title */}
           <div style={{ flexShrink: 0, marginBottom: "10px" }}>
             <h2
               style={{
@@ -208,14 +241,10 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             </h2>
           </div>
 
-          {/* Clinical text — only sections with non-empty content (or
-              isHeading sections, e.g. "DILATATION"/"POST DILATATION") are
-              shown, so any field the user leaves blank simply disappears
-              from the preview/print/PDF */}
+          {/* Clinical text */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             {visibleSections.map((section, index) =>
               section.isHeading ? (
-                // Boxed sub-heading, e.g. "DILATATION ▶" / "POST DILATATION ▶"
                 <div
                   key={index}
                   style={{
@@ -273,12 +302,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             )}
           </div>
 
-          {/* Images 5-6: side by side below text — fixed width so a single
-              leftover image doesn't stretch to fill the row.
-              Pushed to bottom via marginTop:auto so it aligns with the
-              bottom of the right-column image stack, with matching gap
-              above the footer. Height reduced so images aren't vertically
-              stretched relative to their width (matches right-column shape). */}
+          {/* Images 5-6 */}
           {bottomImages.length > 0 && (
             <div
               style={{
@@ -298,15 +322,21 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                     maxWidth: "calc(50% - 4px)",
                     position: "relative",
                     overflow: "hidden",
-                    // When only one bottom image exists, push it to the
-                    // right-hand slot instead of the default left slot.
                     marginLeft: bottomImages.length === 1 && idx === 0 ? "auto" : undefined,
                   }}
                 >
                   <img
                     src={img.url}
                     alt={img.label}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    data-brightness={img.brightness ?? 100}
+                    data-contrast={img.contrast ?? 100}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                      filter: filterFor(img),
+                    }}
                   />
                   <NbiLabel label={img.nbiLabel} />
                 </div>
@@ -315,7 +345,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           )}
         </div>
 
-        {/* ── RIGHT: images 1-4 — starts from top of body, level with date ── */}
+        {/* ── RIGHT: images 1-4 ─────────────────────────────────────── */}
         {rightImages.length > 0 && (
           <div
             style={{
@@ -327,7 +357,6 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               marginBottom: "16px",
             }}
           >
-            {/* Date shown at top of right column, aligned with left's patient row */}
             <div
               style={{
                 flexShrink: 0,
@@ -352,7 +381,6 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               </p>
             </div>
 
-            {/* Images fill remaining right column height */}
             {rightImages.map((img) => (
               <div
                 key={img.id}
@@ -368,11 +396,14 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 <img
                   src={img.url}
                   alt={img.label}
+                  data-brightness={img.brightness ?? 100}
+                  data-contrast={img.contrast ?? 100}
                   style={{
                     width: "80%",
                     height: "100%",
                     objectFit: "cover",
                     display: "block",
+                    filter: filterFor(img),
                   }}
                 />
                 <NbiLabel label={img.nbiLabel} />
@@ -383,6 +414,12 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       </div>
 
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
+      {/*
+        Doctor columns are now generated from footerDoctors (driven by the
+        multi-select in ReportForm). The exact same markup/styles as before
+        are reused per-doctor, so visual output is unchanged whether there
+        are 1, 2, or more doctors selected.
+      */}
       <div
         style={{
           flexShrink: 0,
@@ -402,31 +439,17 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             lineHeight: 1.3,
           }}
         >
-          {/* Doctor 1 */}
-          <div>
-            <p style={{ margin: 0, fontWeight: "600" }}>
-              Dr Hrushikesh P. Chaudhari
-            </p>
-            <p style={{ margin: 0 }}>
-              DNB (Gen. Med.), DNB (Gastro.)
-            </p>
-            <p style={{ margin: 0 }}>
-              Consultant Gastroenterologist & Therapeutic Endoscopist
-            </p>
-          </div>
-
-          {/* Doctor 2 */}
-          <div>
-            <p style={{ margin: 0, fontWeight: "600" }}>
-              Dr Vaibhav Lamdhade
-            </p>
-            <p style={{ margin: 0 }}>
-              DNB (Gen. Med.), DNB (Gastro.)
-            </p>
-            <p style={{ margin: 0 }}>
-              Consultant Gastroenterologist & Therapeutic Endoscopist
-            </p>
-          </div>
+          {footerDoctors.map((doc) => (
+            <div key={doc.id}>
+              <p style={{ margin: 0, fontWeight: "600" }}>{doc.name}</p>
+              {doc.qualifications && (
+                <p style={{ margin: 0 }}>{doc.qualifications}</p>
+              )}
+              {doc.designation && (
+                <p style={{ margin: 0 }}>{doc.designation}</p>
+              )}
+            </div>
+          ))}
         </div>
 
         {/* RIGHT: WEO */}

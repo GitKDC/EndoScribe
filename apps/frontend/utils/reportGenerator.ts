@@ -9,6 +9,67 @@ const A4_MM_H  = 297;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Bake an <img>'s brightness/contrast (read from data-brightness /
+ * data-contrast, set by ReportPreview.tsx) into its pixel data via canvas.
+ * html2canvas does NOT reliably apply CSS `filter` during capture in every
+ * environment (especially Electron/Chromium headless contexts), so we
+ * re-render the image manually before capture to guarantee the filter
+ * shows up in the exported PDF/PNG/print output.
+ */
+const applyFiltersToImage = async (img: HTMLImageElement): Promise<void> => {
+  const brightness = Number(img.dataset.brightness ?? 100);
+  const contrast = Number(img.dataset.contrast ?? 100);
+
+  // skip if no adjustment was made — avoids unnecessary re-encoding
+  if (brightness === 100 && contrast === 100) return;
+
+  try {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.src = img.src;
+
+    await new Promise((res) => {
+      image.onload = res;
+      image.onerror = res;
+    });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) return;
+
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+
+    ctx.filter = `brightness(${brightness / 100}) contrast(${contrast / 100})`;
+    ctx.drawImage(image, 0, 0);
+
+    img.src = canvas.toDataURL("image/jpeg", 0.95);
+  } catch {
+    // Never block the export over a single failed image
+  }
+};
+
+const formatFileName = (
+  patientName: string,
+  category: string,
+  reportDate: string,
+  ageGender: string
+) => {
+  const safe = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/\s+/g, "-")       // spaces → dash
+      .replace(/[^a-z0-9-]/g, ""); // remove special chars
+
+  const safeDate = reportDate
+    ? reportDate.replace(/[^0-9-]/g, "")
+    : new Date().toISOString().split("T")[0];
+
+  return `${safe(patientName)}-${safe(category)}-${safeDate}-${safe(ageGender)}`;
+};
+
 /** Wait for every <img> to finish loading. */
 const waitForImages = (element: HTMLElement): Promise<void> =>
   Promise.all(
@@ -22,29 +83,43 @@ const waitForImages = (element: HTMLElement): Promise<void> =>
   ).then(() => undefined);
 
 /**
- * Convert every blob: or http: src inside `element` to inline base64.
- * html2canvas cannot fetch cross-origin or blob URLs — inlining fixes PDF failures.
+ * Convert every blob:/http: src inside `element` to inline base64, then bake
+ * in any brightness/contrast adjustment via applyFiltersToImage.
+ *
+ * IMPORTANT: this mutates the `<img>` elements it's given in place. Callers
+ * MUST pass a cloned element (never the live on-screen DOM node), otherwise
+ * the visible preview gets permanently overwritten with a re-encoded,
+ * lower-fidelity JPEG every time a PDF/print/export runs.
  */
 const inlineBlobImages = async (element: HTMLElement): Promise<void> => {
   const imgs = Array.from(element.querySelectorAll<HTMLImageElement>("img"));
+
   await Promise.all(
     imgs.map(async (img) => {
-      const src = img.getAttribute("src") || "";
-      // Only process blob URLs and external http URLs — skip /images/* local paths
-      if (!src.startsWith("blob:") && !src.startsWith("http")) return;
-      try {
-        const resp = await fetch(src);
-        const blob = await resp.blob();
-        const b64  = await new Promise<string>((res, rej) => {
-          const reader = new FileReader();
-          reader.onload  = () => res(reader.result as string);
-          reader.onerror = rej;
-          reader.readAsDataURL(blob);
-        });
-        img.src = b64;
-      } catch {
-        // Never block the export over a single failed image
+      let src = img.getAttribute("src") || "";
+
+      // STEP 1: Convert blob/http → base64 (ONLY ONCE)
+      if (src.startsWith("blob:") || src.startsWith("http")) {
+        try {
+          const resp = await fetch(src);
+          const blob = await resp.blob();
+
+          const b64 = await new Promise<string>((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result as string);
+            reader.onerror = rej;
+            reader.readAsDataURL(blob);
+          });
+
+          img.src = b64;
+          src = b64; // update src
+        } catch {
+          // keep original src if fetch/convert fails
+        }
       }
+
+      // STEP 2: Bake brightness/contrast into the (now base64) image data
+      await applyFiltersToImage(img);
     })
   );
 };
@@ -57,43 +132,60 @@ const safeDate = (d: string) =>
  * Capture #report-content as a canvas.
  * Forces exactly A4_PX_W × A4_PX_H pixels so the PDF is always one page.
  * Retries at lower scale if the browser runs out of memory.
+ *
+ * Operates on a detached CLONE of #report-content so that baking filters /
+ * inlining blob URLs never mutates the live, on-screen preview.
  */
 const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
-  const element = document.getElementById("report-content");
-  if (!element) throw new Error("Element #report-content not found in DOM.");
+  const source = document.getElementById("report-content");
+  if (!source) throw new Error("Element #report-content not found in DOM.");
 
-  // 1. Inline blob / external URLs so html2canvas can read them
-  await inlineBlobImages(element);
-  // 2. Wait for all images (including the newly inlined ones) to render
-  await waitForImages(element);
-  // 3. Short settle so the browser repaints after src changes
-  await new Promise((r) => setTimeout(r, 350));
+  // Work on a clone — keeps the visible preview untouched and pristine.
+  const clone = source.cloneNode(true) as HTMLElement;
+  clone.style.position = "fixed";
+  clone.style.top = "-99999px";
+  clone.style.left = "-99999px";
+  clone.style.pointerEvents = "none";
+  document.body.appendChild(clone);
 
   try {
-    return await html2canvas(element, {
-      useCORS: true,
-      allowTaint: false,
-      scale,
-      backgroundColor: "#ffffff",
-      logging: false,
-      // Force exactly A4 dimensions — prevents the footer from ever being on page 2
-      width:        A4_PX_W,
-      height:       A4_PX_H,
-      windowWidth:  A4_PX_W,
-      windowHeight: A4_PX_H,
-      imageTimeout: 15000,
-    });
-  } catch (err) {
-    if (scale > 1) {
-      console.warn(`html2canvas OOM at scale ${scale}, retrying at ${scale - 1}…`);
-      return captureReport(scale - 1);
+    // 1. Inline blob / external URLs + bake brightness/contrast filters
+    await inlineBlobImages(clone);
+    // 2. Wait for all images (including the newly inlined ones) to render
+    await waitForImages(clone);
+    // 3. Short settle so the browser repaints after src changes
+    await new Promise((r) => setTimeout(r, 350));
+
+    try {
+      return await html2canvas(clone, {
+        useCORS: true,
+        allowTaint: false,
+        scale,
+        backgroundColor: "#ffffff",
+        logging: false,
+        // Force exactly A4 dimensions — prevents the footer from ever being on page 2
+        width:        A4_PX_W,
+        height:       A4_PX_H,
+        windowWidth:  A4_PX_W,
+        windowHeight: A4_PX_H,
+        imageTimeout: 15000,
+      });
+    } catch (err) {
+      if (scale > 1) {
+        console.warn(`html2canvas OOM at scale ${scale}, retrying at ${scale - 1}…`);
+        // Retry with a fresh clone at lower scale
+        document.body.removeChild(clone);
+        return captureReport(scale - 1);
+      }
+      throw err;
     }
-    throw err;
+  } finally {
+    if (clone.parentNode) document.body.removeChild(clone);
   }
 };
 
 // ── PDF ────────────────────────────────────────────────────────────────────────
-export const generatePDF = async (reportDate: string): Promise<void> => {
+export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string): Promise<void> => {
   const canvas = await captureReport(3);
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -101,7 +193,9 @@ export const generatePDF = async (reportDate: string): Promise<void> => {
   // canvas is always exactly A4_PX_W × A4_PX_H → maps to one A4 page, no stretching
   pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, A4_MM_W, A4_MM_H);
 
-  pdf.save(`Endoscopy-Report-${safeDate(reportDate)}.pdf`);
+  pdf.save(
+  `${formatFileName(patientName, reportType, reportDate, patientAge)}.pdf`
+);
 };
 
 // ── Print ──────────────────────────────────────────────────────────────────────
@@ -145,12 +239,13 @@ ${cloned.outerHTML}
 };
 
 // ── PNG export ─────────────────────────────────────────────────────────────────
-export const exportAsImage = async (reportDate: string): Promise<void> => {
+export const exportAsImage = async (reportDate: string, patientName: string, patientAge: string, reportType: string): Promise<void> => {
   const canvas = await captureReport(3);
 
   const link    = document.createElement("a");
   link.href     = canvas.toDataURL("image/png");
-  link.download = `Endoscopy-Report-${safeDate(reportDate)}.png`;
+  link.download =
+  `${formatFileName(patientName, reportType, reportDate, patientAge)}.png`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

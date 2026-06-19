@@ -1,461 +1,612 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { useEffect, useState, useCallback } from "react";
-import ReportForm from "@/components/ReportForm";
-import ImageUploader from "@/components/ImageUploader";
-import ReportPreview from "@/components/ReportPreview";
-import { generatePDF, printReport, exportAsImage } from "@/utils/reportGenerator";
+const THEME = {
+  navy:    "#1a3a52",
+  navyDark:"#0f2a3f",
+  teal:    "#0d9488",
+  tealLight:"#ccfbf1",
+  tealBg:  "#f0fdfa",
+  green:   "#2a7a2a",
+  white:   "#ffffff",
+  bg:      "#f0f4f8",
+  border:  "#e2e8f0",
+  text:    "#1e293b",
+  muted:   "#64748b",
+  danger:  "#dc2626",
+  dangerBg:"#fef2f2",
+};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-type Template = {
+type Template = { id: number; name: string; category: string };
+type Doctor = {
   id: number;
   name: string;
-  category: string;
-  sections: {
-    title: string;
-    content: string;
-    highlight?: boolean;
-  }[];
+  qualifications?: string;
+  designation?: string;
+  is_default?: number;
+  display_order?: number;
 };
 
-type ImageData = {
-  id: string;
-  url: string;
-  label: string;
-};
+export default function Dashboard() {
+  const router = useRouter();
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [time, setTime]           = useState(new Date());
 
-type ActionState = "idle" | "loading" | "success" | "error";
-type ToastMessage = { id: number; text: string; type: "success" | "error" };
+  // 🔥 NEW: doctors state
+  const [doctors, setDoctors]       = useState<Doctor[]>([]);
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [editDoc, setEditDoc]       = useState<Doctor | null>(null);
+  const [delDocId, setDelDocId]     = useState<number | null>(null);
+  const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-const getCurrentDateForInput = (): string => {
-  const today = new Date();
-  return [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0"),
-  ].join("-");
-};
+  // form state for doctor modal
+  const [fName, setFName]   = useState("");
+  const [fQual, setFQual]   = useState("");
+  const [fDesig, setFDesig] = useState("");
+  const [fDefault, setFDefault] = useState(true);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FALLBACK TEMPLATES (when Electron API is unavailable)
-// ─────────────────────────────────────────────────────────────────────────────
-const FALLBACK_TEMPLATES: Template[] = [
-  {
-    id: 1,
-    name: "Normal Study",
-    category: "UGI",
-    sections: [
-      { title: "Esophagus", content: "Normal" },
-      { title: "Stomach", content: "Normal" },
-      { title: "Duodenum", content: "Normal" },
-      { title: "Impression", content: "Normal study", highlight: true },
-    ],
-  },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HOME
-// ─────────────────────────────────────────────────────────────────────────────
-export default function Home() {
-  // ── Template loading ────────────────────────────────────────────────────────
-  const [templates, setTemplates]   = useState<Template[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [loadError, setLoadError]   = useState<string | null>(null);
-
-  // ── Report fields ───────────────────────────────────────────────────────────
-  const [patientName, setPatientName] = useState("");
-  const [patientAge,  setPatientAge]  = useState("");
-  const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
-  const [reportType,  setReportType]  = useState("UGI");
-  const [doctorName,  setDoctorName]  = useState("Dr Your Name");
-  const [images,      setImages]      = useState<ImageData[]>([]);
-  const [prefix, setPrefix] = useState("Mr");
-
-  // ── UI state ─────────────────────────────────────────────────────────────────
-  const [printState,  setPrintState]  = useState<ActionState>("idle");
-  const [pdfState,    setPdfState]    = useState<ActionState>("idle");
-  const [imgState,    setImgState]    = useState<ActionState>("idle");
-  const [toasts,      setToasts]      = useState<ToastMessage[]>([]);
-  const [mounted,     setMounted]     = useState(false);
-
-  const [sections, setSections] = useState<
-    { title: string; content: string; highlight?: boolean }[]
-  >([]);
-
-  // Mount animation
-  useEffect(() => { setMounted(true); }, []);
-
-  // ── Toast system ─────────────────────────────────────────────────────────────
-  const addToast = useCallback((text: string, type: "success" | "error") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, text, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
-  }, []);
-
-  // ── Load templates ───────────────────────────────────────────────────────────
   useEffect(() => {
-    const loadTemplates = async () => {
-      try {
-        setLoading(true);
-        setLoadError(null);
-        if (!(window as any).api) {
-          setTemplates(FALLBACK_TEMPLATES);
-          return;
-        }
-        const data = await (window as any).api.getTemplates();
-        if (!data || data.length === 0) throw new Error("No templates found");
-        setTemplates(data);
-      } catch (err) {
-        setLoadError(err instanceof Error ? err.message : "Failed to load templates");
-        setTemplates(FALLBACK_TEMPLATES); // always fall back so UI isn't blocked
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadTemplates();
+    const t = setInterval(() => setTime(new Date()), 60000);
+    return () => clearInterval(t);
   }, []);
 
-  // ── Report type change — clears sections so old content doesn't bleed across types
-  const handleReportTypeChange = (val: string) => {
-    setReportType(val);
-    setSections([]);
+  useEffect(() => {
+    if ((window as any).api) {
+      (window as any).api.getTemplates().then(setTemplates).catch(console.error);
+      loadDoctors();
+    }
+  }, []);
+
+  const loadDoctors = async () => {
+    try {
+      const data = await (window as any).api.getDoctors();
+      setDoctors(data || []);
+    } catch (err) {
+      console.error("Failed to load doctors:", err);
+    }
   };
 
-  // ── Template selection ───────────────────────────────────────────────────────
-  const handleTemplateSelect = async (id: number) => {
+  const showToast = (msg: string, ok = true) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const openAddDoctor = () => {
+    setEditDoc(null);
+    setFName(""); setFQual(""); setFDesig(""); setFDefault(true);
+    setShowDocModal(true);
+  };
+
+  const openEditDoctor = (d: Doctor) => {
+    setEditDoc(d);
+    setFName(d.name);
+    setFQual(d.qualifications || "");
+    setFDesig(d.designation || "");
+    setFDefault(!!d.is_default);
+    setShowDocModal(true);
+  };
+
+  const saveDoctor = async () => {
+    if (!fName.trim()) return showToast("Doctor name is required", false);
+    const payload = {
+      name: fName.trim(),
+      qualifications: fQual.trim(),
+      designation: fDesig.trim(),
+      is_default: fDefault ? 1 : 0,
+      display_order: editDoc?.display_order ?? doctors.length + 1,
+    };
     try {
-      let template: Template | undefined;
-      if (!(window as any).api) {
-        template = templates.find((t) => t.id === id);
+      if (editDoc) {
+        await (window as any).api.updateDoctor(editDoc.id, payload);
+        showToast("Doctor updated ✓");
       } else {
-        template = await (window as any).api.getTemplate(id);
+        await (window as any).api.createDoctor(payload);
+        showToast("Doctor added ✓");
       }
-      if (template) {
-        setSections(template.sections || []);
-        setReportType(template.category);
-      }
-    } catch (err) {
-      console.error("Template load error:", err);
+      setShowDocModal(false);
+      loadDoctors();
+    } catch {
+      showToast("Save failed", false);
     }
   };
 
-  // ── Image handlers ───────────────────────────────────────────────────────────
-  const handleImagesAdded      = (newImgs: ImageData[]) => setImages((p) => [...p, ...newImgs]);
-  const handleImageRemoved     = (id: string) => setImages((p) => p.filter((i) => i.id !== id));
-  const handleImageLabelChanged = (id: string, label: string) =>
-    setImages((p) => p.map((i) => (i.id === id ? { ...i, label } : i)));
-
-  // ── Reset ────────────────────────────────────────────────────────────────────
-  const handleReset = () => {
-    setPatientName("");
-    setPatientAge("");
-    setReportDate(getCurrentDateForInput());
-    setReportType("UGI");
-    setSections([]);
-    setImages([]);
-    addToast("Form cleared", "success");
-  };
-
-  // ── Action button wrapper ─────────────────────────────────────────────────────
-  const runAction = async (
-    setState: (s: ActionState) => void,
-    fn: () => Promise<void>,
-    successMsg: string,
-    errorMsg: string
-  ) => {
-    setState("loading");
+  const confirmDeleteDoctor = async (id: number) => {
     try {
-      await fn();
-      setState("success");
-      addToast(successMsg, "success");
-    } catch (err) {
-      setState("error");
-      addToast(
-        `${errorMsg}: ${err instanceof Error ? err.message : String(err)}`,
-        "error"
-      );
-      console.error(err);
-    } finally {
-      setTimeout(() => setState("idle"), 2000);
+      await (window as any).api.deleteDoctor(id);
+      setDelDocId(null);
+      showToast("Doctor removed");
+      loadDoctors();
+    } catch {
+      showToast("Delete failed", false);
     }
   };
 
-  const handlePrint       = () => runAction(setPrintState, printReport,                    "Sent to printer ✓",     "Print failed");
-  const handleDownloadPDF = () => runAction(setPdfState,   () => generatePDF(reportDate),  "PDF downloaded ✓",      "PDF failed");
-  const handleExportImage = () => runAction(setImgState,   () => exportAsImage(reportDate),"Image exported ✓",      "Export failed");
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STYLES
-  // ─────────────────────────────────────────────────────────────────────────────
-  const btnBase: React.CSSProperties = {
-    padding: "13px",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "600",
-    cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-    transition: "transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "6px",
-    letterSpacing: "0.3px",
+  const greeting = () => {
+    const h = time.getHours();
+    if (h < 12) return "Good Morning";
+    if (h < 17) return "Good Afternoon";
+    return "Good Evening";
   };
 
-  const btnHover = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 18px rgba(0,0,0,0.2)";
-  };
-  const btnLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
+  const dateStr = time.toLocaleDateString("en-IN", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+  const ugiCount  = templates.filter(t => t.category === "UGI").length;
+  const vlsCount  = templates.filter(t => t.category === "VLS").length;
+  const sigCount  = templates.filter(t => t.category === "SIGMOIDOSCOPY").length;
+
+  const QUICK = [
+    { label: "Upper GI Endoscopy",  cat: "UGI",          icon: "🔭", color: THEME.teal  },
+    { label: "VLS Scopy",           cat: "VLS",          icon: "🩺", color: "#7c3aed"   },
+    { label: "Sigmoidoscopy",       cat: "SIGMOIDOSCOPY",icon: "🔬", color: "#b45309"   },
+    { label: "ERCP",                cat: "ERCP",         icon: "💉", color: "#dc2626"   },
+  ];
+
+  const card: React.CSSProperties = {
+    background: THEME.white,
+    borderRadius: "14px",
+    border: `1px solid ${THEME.border}`,
+    boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+    overflow: "hidden",
   };
 
-  const getLabel = (state: ActionState, idle: string, loading: string, success: string) => {
-    if (state === "loading") return <><Spinner />{loading}</>;
-    if (state === "success") return <>{"\u2713"} {success}</>;
-    return <>{idle}</>;
+  const inp: React.CSSProperties = {
+    padding: "9px 12px", border: `1.5px solid ${THEME.border}`,
+    borderRadius: "7px", fontSize: "13px", fontFamily: "inherit",
+    outline: "none", width: "100%", boxSizing: "border-box", background: THEME.white,
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // LOADING SCREEN
-  // ─────────────────────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        minHeight: "100vh", backgroundColor: "#eef2f5", flexDirection: "column", gap: "16px"
-      }}>
-        <div style={{
-          width: "44px", height: "44px", border: "4px solid #dee2e6",
-          borderTop: "4px solid #1a3a52", borderRadius: "50%",
-          animation: "spin 0.8s linear infinite"
-        }} />
-        <h2 style={{ color: "#1a3a52", fontWeight: 600, margin: 0 }}>Loading templates…</h2>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // MAIN RENDER
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Global animations ─────────────────────────────────────────────── */}
       <style>{`
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        @keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
-        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
-        @keyframes toastOut { to { opacity: 0; transform: translateX(40px); } }
-        input:focus, textarea:focus, select:focus {
-          outline: none !important;
-          border-color: #0d6efd !important;
-          box-shadow: 0 0 0 3px rgba(13,110,253,0.18) !important;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; }
+        .dash-quick:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
+        .dash-quick { transition: transform 0.18s, box-shadow 0.18s; }
+        .tpl-row:hover { background: #f8fafc !important; }
+        .doc-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important; }
+        .doc-card { transition: box-shadow 0.18s; }
+        input:focus, textarea:focus { border-color: #0d9488 !important; box-shadow: 0 0 0 3px rgba(13,148,136,0.15) !important; }
       `}</style>
 
-      {/* ── Toast stack ───────────────────────────────────────────────────── */}
-      <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 9999, display: "flex", flexDirection: "column", gap: "8px" }}>
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              padding: "10px 18px",
-              borderRadius: "8px",
-              backgroundColor: t.type === "success" ? "#198754" : "#dc3545",
-              color: "white",
-              fontSize: "14px",
-              fontWeight: 500,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-              animation: "toastIn 0.3s ease",
-              minWidth: "220px",
-              maxWidth: "320px",
-            }}
-          >
-            {t.type === "success" ? "✓ " : "✕ "}{t.text}
-          </div>
-        ))}
-      </div>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: "16px", right: "16px", zIndex: 9999,
+          padding: "11px 20px", borderRadius: "8px",
+          background: toast.ok ? THEME.teal : THEME.danger,
+          color: "white", fontFamily: "Inter, sans-serif",
+          fontSize: "13px", fontWeight: "500",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+        }}>
+          {toast.ok ? "✓ " : "✕ "}{toast.msg}
+        </div>
+      )}
 
-      <div style={{ backgroundColor: "#eef2f5", height: "100vh", overflow: "hidden", animation: mounted ? "fadeIn 0.4s ease" : "none" }}>
-        <div style={{ display: "flex", height: "100%" }}>
+      <div style={{
+        flex: 1,
+        overflowY: "auto",
+        background: THEME.bg,
+        fontFamily: "'Inter', sans-serif",
+        color: THEME.text,
+      }}>
 
-          {/* ── LEFT PANEL ─────────────────────────────────────────────────── */}
-          <div
-            style={{
-              width: "35%",
-              minWidth: "400px",
-              padding: "24px",
-              backgroundColor: "#f8f9fa",
-              overflowY: "auto",
-              borderRight: "1px solid #dee2e6",
-              boxShadow: "4px 0 14px rgba(0,0,0,0.06)",
-              zIndex: 10,
-              animation: mounted ? "slideIn 0.35s ease" : "none",
-            }}
-          >
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
-              <span style={{ fontSize: "24px" }}>📝</span>
-              <h2 style={{ color: "#1a3a52", margin: 0, fontSize: "20px", fontWeight: "700" }}>
-                EndoScribe: Endoscopy Report Generator 
-              </h2>
+        {/* ── Hero banner ──────────────────────────────────────── */}
+        <div style={{
+          background: `linear-gradient(135deg, ${THEME.navyDark} 0%, ${THEME.navy} 55%, #1e5a6e 100%)`,
+          padding: "32px 36px 28px",
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", right: "-40px", top: "-40px",
+            width: "220px", height: "220px", borderRadius: "50%",
+            background: "rgba(13,148,136,0.18)",
+          }} />
+          <div style={{
+            position: "absolute", right: "60px", bottom: "-60px",
+            width: "160px", height: "160px", borderRadius: "50%",
+            background: "rgba(13,148,136,0.10)",
+          }} />
+
+          <div style={{ position: "relative" }}>
+            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", marginBottom: "6px" }}>
+              {dateStr}
             </div>
-
-            {/* Error banner (dismissible) */}
-            {loadError && (
-              <div style={{
-                padding: "10px 14px", backgroundColor: "#fff3cd", color: "#856404",
-                borderRadius: "8px", marginBottom: "16px", border: "1px solid #ffc107",
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                fontSize: "13px", animation: "fadeIn 0.3s ease",
-              }}>
-                <span>⚠️ {loadError} — using default templates.</span>
-                <button
-                  onClick={() => setLoadError(null)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#856404", padding: "0 4px" }}
-                >
-                  ×
-                </button>
-              </div>
-            )}
-
-            {/* Form */}
-            <ReportForm
-              patientName={patientName}
-              patientAge={patientAge}
-              reportDate={reportDate}
-              reportType={reportType}
-              doctorName={doctorName}
-              templates={templates}
-              sections={sections}
-              setSections={setSections}
-              onPatientNameChange={setPatientName}
-              onPatientAgeChange={setPatientAge}
-              onReportDateChange={setReportDate}
-              onReportTypeChange={handleReportTypeChange}
-              onTemplateSelect={handleTemplateSelect}
-              prefix={prefix}
-              setPrefix={setPrefix}
-            />
-
-            {/* Image uploader */}
-            <div style={{ marginTop: "18px" }}>
-              <ImageUploader
-                images={images}
-                onImagesAdded={handleImagesAdded}
-                onImageRemoved={handleImageRemoved}
-                onImageLabelChanged={handleImageLabelChanged}
-                maxImages={12}
-              />
-            </div>
-
-            {/* ── Action buttons ─────────────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "28px" }}>
-              <button
-                onClick={handlePrint}
-                disabled={printState === "loading"}
-                onMouseEnter={btnHover} onMouseLeave={btnLeave}
-                style={{ ...btnBase, backgroundColor: printState === "success" ? "#157347" : "#0d6efd", opacity: printState === "loading" ? 0.75 : 1 }}
-              >
-                {getLabel(printState, "🖨️ Print", "Printing…", "Printed")}
-              </button>
-
-              <button
-                onClick={handleDownloadPDF}
-                disabled={pdfState === "loading"}
-                onMouseEnter={btnHover} onMouseLeave={btnLeave}
-                style={{ ...btnBase, backgroundColor: pdfState === "success" ? "#157347" : "#198754", opacity: pdfState === "loading" ? 0.75 : 1 }}
-              >
-                {getLabel(pdfState, "📥 PDF", "Generating…", "Saved")}
-              </button>
-
-              <button
-                onClick={handleExportImage}
-                disabled={imgState === "loading"}
-                onMouseEnter={btnHover} onMouseLeave={btnLeave}
-                style={{ ...btnBase, backgroundColor: "#0dcaf0", color: "#000", opacity: imgState === "loading" ? 0.75 : 1 }}
-              >
-                {getLabel(imgState, "🖼️ Image", "Exporting…", "Exported")}
-              </button>
-
-              <button
-                onClick={handleReset}
-                onMouseEnter={btnHover} onMouseLeave={btnLeave}
-                style={{ ...btnBase, backgroundColor: "#6c757d" }}
-              >
-                🔄 Reset
-              </button>
-            </div>
-          </div>
-
-          {/* ── RIGHT PANEL – A4 preview ──────────────────────────────────── */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              backgroundColor: "#dbe0e5",
-              padding: "40px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-start",
-            }}
-          >
-            <div
+            <h1 style={{ margin: 0, fontSize: "26px", fontWeight: "800", letterSpacing: "-0.3px" }}>
+              {greeting()}, Dr. Chaudhari
+            </h1>
+            <p style={{ margin: "8px 0 20px", color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>
+              Shobha Hospital &amp; Superspeciality Gastroenterology Centre
+            </p>
+            <button
+              onClick={() => router.push("/create-report")}
               style={{
-                width: "210mm",
-                minHeight: "297mm",
-                backgroundColor: "white",
-                boxShadow: "0 12px 36px rgba(0,0,0,0.18)",
-                borderRadius: "2px",
-                margin: "0 auto",
-                transition: "box-shadow 0.2s ease",
+                padding: "11px 24px",
+                background: THEME.teal,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 14px rgba(13,148,136,0.4)",
               }}
             >
-              <ReportPreview
-                patientName={patientName}
-                patientAge={patientAge}
-                reportDate={reportDate}
-                reportType={reportType}
-                sections={sections}
-                doctorName={doctorName}
-                images={images}
-                prefix={prefix}
-              />
+              ✏️ New Report
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: "28px 36px", display: "flex", flexDirection: "column", gap: "24px" }}>
+
+          {/* ── Stat cards ───────────────────────────────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+            {[
+              { label: "Total Templates", value: templates.length, icon: "🗂️", color: THEME.teal },
+              { label: "UGI Templates",   value: ugiCount,         icon: "🔭", color: "#7c3aed" },
+              { label: "VLS Templates",   value: vlsCount,         icon: "🩺", color: "#b45309" },
+              { label: "Doctors",         value: doctors.length,   icon: "🩻", color: "#dc2626" },
+            ].map((s) => (
+              <div key={s.label} style={{
+                ...card,
+                padding: "20px",
+                display: "flex",
+                alignItems: "center",
+                gap: "16px",
+              }}>
+                <div style={{
+                  width: "48px", height: "48px", borderRadius: "12px",
+                  background: s.color + "18",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "22px", flexShrink: 0,
+                }}>
+                  {s.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: "26px", fontWeight: "800", color: s.color, lineHeight: 1 }}>
+                    {s.value}
+                  </div>
+                  <div style={{ fontSize: "12px", color: THEME.muted, marginTop: "4px" }}>
+                    {s.label}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Quick start + template list ───────────────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: "20px" }}>
+
+            {/* Quick actions */}
+            <div style={{ ...card, padding: "22px" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
+                🚀 Quick Start
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {QUICK.map((q) => (
+                  <button
+                    key={q.cat}
+                    className="dash-quick"
+                    onClick={() => router.push(`/create-report?type=${q.cat}`)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "13px 16px",
+                      background: "white",
+                      border: `1.5px solid ${THEME.border}`,
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <span style={{
+                      width: "36px", height: "36px", borderRadius: "8px",
+                      background: q.color + "18",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "18px", flexShrink: 0,
+                    }}>
+                      {q.icon}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: THEME.text }}>
+                        {q.label}
+                      </div>
+                      <div style={{ fontSize: "11px", color: THEME.muted }}>
+                        Create new report
+                      </div>
+                    </div>
+                    <span style={{ marginLeft: "auto", color: THEME.muted, fontSize: "16px" }}>›</span>
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Template list */}
+            <div style={{ ...card, padding: "22px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
+                  🗂️ Templates
+                </h3>
+                <button
+                  onClick={() => router.push("/templates")}
+                  style={{
+                    fontSize: "12px", color: THEME.teal, background: "none",
+                    border: "none", cursor: "pointer", fontWeight: "600", fontFamily: "inherit",
+                  }}
+                >
+                  Manage all →
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+                {templates.slice(0, 8).map((t, i) => (
+                  <div
+                    key={t.id}
+                    className="tpl-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      borderBottom: i < templates.slice(0, 8).length - 1 ? `1px solid ${THEME.border}` : "none",
+                    }}
+                    onClick={() => router.push("/templates")}
+                  >
+                    <div style={{ fontSize: "13px", fontWeight: "500", color: THEME.text }}>
+                      {t.name}
+                    </div>
+                    <span style={{
+                      fontSize: "11px", fontWeight: "600", padding: "2px 8px",
+                      borderRadius: "20px",
+                      background: t.category === "UGI" ? "#ccfbf1" : t.category === "VLS" ? "#ede9fe" : "#fef3c7",
+                      color:      t.category === "UGI" ? "#0d9488"  : t.category === "VLS" ? "#7c3aed"  : "#b45309",
+                    }}>
+                      {t.category}
+                    </span>
+                  </div>
+                ))}
+                {templates.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "32px", color: THEME.muted, fontSize: "13px" }}>
+                    No templates yet. <span
+                      style={{ color: THEME.teal, cursor: "pointer", fontWeight: "600" }}
+                      onClick={() => router.push("/templates")}
+                    >Add one →</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── 🔥 NEW: Doctors section ───────────────────────── */}
+          <div style={{ ...card, padding: "22px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
+                🩻 Doctors
+              </h3>
+              <button onClick={openAddDoctor} style={{
+                padding: "7px 16px", background: THEME.teal, color: "white",
+                border: "none", borderRadius: "7px", fontSize: "12.5px",
+                fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
+              }}>
+                + Add Doctor
+              </button>
+            </div>
+
+            {doctors.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "28px", color: THEME.muted, fontSize: "13px" }}>
+                No doctors added yet.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px" }}>
+                {doctors.map((d) => (
+                  <div key={d.id} className="doc-card" style={{
+                    border: `1px solid ${THEME.border}`,
+                    borderRadius: "10px",
+                    padding: "14px 16px",
+                    background: "#fafbfc",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                      <div>
+                        <div style={{ fontSize: "13.5px", fontWeight: "700", color: THEME.text }}>
+                          {d.name}
+                        </div>
+                        {d.qualifications && (
+                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "3px" }}>
+                            {d.qualifications}
+                          </div>
+                        )}
+                        {d.designation && (
+                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "1px" }}>
+                            {d.designation}
+                          </div>
+                        )}
+                        {!!d.is_default && (
+                          <span style={{
+                            display: "inline-block", marginTop: "6px",
+                            fontSize: "10px", fontWeight: "700", color: THEME.teal,
+                            background: THEME.tealBg, padding: "2px 8px", borderRadius: "20px",
+                          }}>
+                            Default on new reports
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                        <button onClick={() => openEditDoctor(d)} style={{
+                          padding: "4px 9px", border: `1px solid ${THEME.border}`,
+                          borderRadius: "6px", background: "white", cursor: "pointer",
+                          fontSize: "11px", fontWeight: "600", color: THEME.navy, fontFamily: "inherit",
+                        }}>Edit</button>
+                        <button onClick={() => setDelDocId(d.id)} style={{
+                          padding: "4px 9px", border: "1px solid #fecaca",
+                          borderRadius: "6px", background: THEME.dangerBg, cursor: "pointer",
+                          fontSize: "11px", fontWeight: "600", color: THEME.danger, fontFamily: "inherit",
+                        }}>Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Info strip ───────────────────────────────────── */}
+          <div style={{
+            ...card,
+            padding: "18px 24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            background: `linear-gradient(90deg, ${THEME.tealLight}, #f0fdf4)`,
+            border: `1px solid #99f6e4`,
+          }}>
+            <span style={{ fontSize: "24px" }}>💡</span>
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: THEME.navy }}>
+                Tip: Use templates to speed up report generation
+              </div>
+              <div style={{ fontSize: "12px", color: THEME.muted, marginTop: "2px" }}>
+                Load a template in the New Report screen, then customise clinical findings before printing or exporting.
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/create-report")}
+              style={{
+                marginLeft: "auto", flexShrink: 0,
+                padding: "9px 18px",
+                background: THEME.teal, color: "white",
+                border: "none", borderRadius: "7px",
+                fontSize: "13px", fontWeight: "600",
+                cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              Try now
+            </button>
           </div>
 
         </div>
       </div>
+
+      {/* ── Delete confirm ─────────────────────────────────── */}
+      {delDocId !== null && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+          zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: THEME.white, borderRadius: "14px", padding: "28px 32px",
+            fontFamily: "Inter, sans-serif", maxWidth: "380px", width: "90%",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          }}>
+            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px" }}>🗑️</div>
+            <h3 style={{ margin: "0 0 8px", textAlign: "center", color: THEME.text }}>Remove Doctor?</h3>
+            <p style={{ margin: "0 0 20px", textAlign: "center", color: THEME.muted, fontSize: "13px" }}>
+              They will no longer appear in the doctor selector for new reports.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setDelDocId(null)} style={{
+                flex: 1, padding: "10px", border: `1.5px solid ${THEME.border}`,
+                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                fontSize: "14px", fontWeight: "600", background: "white", color: THEME.text,
+              }}>Cancel</button>
+              <button onClick={() => confirmDeleteDoctor(delDocId)} style={{
+                flex: 1, padding: "10px", border: "none",
+                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                fontSize: "14px", fontWeight: "600", background: THEME.danger, color: "white",
+              }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add / Edit Doctor Modal ───────────────────────── */}
+      {showDocModal && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+          zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px",
+        }}>
+          <div style={{
+            background: THEME.white, borderRadius: "16px",
+            width: "100%", maxWidth: "440px",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+            fontFamily: "Inter, sans-serif",
+          }}>
+            <div style={{
+              background: `linear-gradient(135deg, ${THEME.navyDark}, ${THEME.navy})`,
+              color: "white", padding: "18px 22px",
+              borderRadius: "16px 16px 0 0",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <h2 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>
+                {editDoc ? "✏️ Edit Doctor" : "➕ Add Doctor"}
+              </h2>
+              <button onClick={() => setShowDocModal(false)} style={{
+                background: "rgba(255,255,255,0.15)", border: "none",
+                color: "white", width: "28px", height: "28px",
+                borderRadius: "50%", cursor: "pointer", fontSize: "16px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>×</button>
+            </div>
+
+            <div style={{ padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: THEME.muted, marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Full Name *
+                </label>
+                <input value={fName} onChange={e => setFName(e.target.value)}
+                  placeholder="e.g. Dr Hrushikesh P. Chaudhari" style={inp} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: THEME.muted, marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Qualifications
+                </label>
+                <input value={fQual} onChange={e => setFQual(e.target.value)}
+                  placeholder="e.g. DNB (Gen. Med.), DNB (Gastro.)" style={inp} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: THEME.muted, marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Designation
+                </label>
+                <input value={fDesig} onChange={e => setFDesig(e.target.value)}
+                  placeholder="e.g. Consultant Gastroenterologist & Therapeutic Endoscopist" style={inp} />
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: THEME.text, cursor: "pointer" }}>
+                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)}
+                  style={{ accentColor: THEME.teal, cursor: "pointer" }} />
+                Select by default on new reports
+              </label>
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", paddingTop: "6px" }}>
+                <button onClick={() => setShowDocModal(false)} style={{
+                  padding: "9px 20px", border: `1.5px solid ${THEME.border}`,
+                  borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                  fontSize: "13px", fontWeight: "600", background: "white", color: THEME.text,
+                }}>Cancel</button>
+                <button onClick={saveDoctor} style={{
+                  padding: "9px 24px", border: "none",
+                  borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                  fontSize: "13px", fontWeight: "600",
+                  background: THEME.teal, color: "white",
+                  boxShadow: "0 4px 12px rgba(13,148,136,0.3)",
+                }}>
+                  {editDoc ? "Save Changes" : "Add Doctor"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// INLINE SPINNER COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-const Spinner = () => (
-  <span
-    style={{
-      display: "inline-block",
-      width: "14px",
-      height: "14px",
-      border: "2px solid rgba(255,255,255,0.35)",
-      borderTop: "2px solid white",
-      borderRadius: "50%",
-      animation: "spin 0.7s linear infinite",
-      flexShrink: 0,
-    }}
-  />
-);

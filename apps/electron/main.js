@@ -10,7 +10,6 @@ app.disableHardwareAcceleration();
 
 // Import DB and handlers AFTER app is ready
 let db;
-let registerReportHandlers;
 
 let win;
 
@@ -72,10 +71,19 @@ async function initializeApp() {
     console.log("🔵 Initializing database...");
     db = require("../../packages/backend/db/db");
 
-    // Register IPC handlers
-    console.log("🔵 Registering IPC handlers...");
-    registerReportHandlers = require("../../packages/backend/ipc/reportHandlers");
-    registerReportHandlers.registerReportHandlers();
+    // Register Report IPC handlers
+    console.log("🔵 Registering Report IPC handlers...");
+    const reportHandlers = require("../../packages/backend/ipc/reportHandlers");
+    reportHandlers.registerReportHandlers();
+
+    console.log("🔵 Registering Template IPC handlers...");
+    const templateHandlers = require("../../packages/backend/ipc/templateHandlers");
+    templateHandlers.registerTemplateHandlers();
+
+    // 🔥 NEW: Register Doctor IPC handlers
+    console.log("🔵 Registering Doctor IPC handlers...");
+    const doctorHandlers = require("../../packages/backend/ipc/doctorsHandlers");
+    doctorHandlers.registerDoctorHandlers();
 
     console.log("✅ App initialized successfully");
   } catch (error) {
@@ -86,7 +94,7 @@ async function initializeApp() {
 
 app.whenReady().then(async () => {
   console.log("🚀 App is ready");
-  
+
   await initializeApp();
   createWindow();
 
