@@ -5,6 +5,7 @@ interface ImageData {
   url: string;
   label: string;
   brightness?: number;
+  filePath?: string;
   contrast?: number;
 }
 
@@ -27,25 +28,55 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const remainingSlots = maxImages - images.length;
-    const filesToAdd = files.slice(0, remainingSlots);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || []);
+  const remainingSlots = maxImages - images.length;
+  const filesToAdd = files.slice(0, remainingSlots);
 
-    const newImages: ImageData[] = filesToAdd.map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      url: URL.createObjectURL(file),
-      label: `Image ${images.length + index + 1}`,
+  const newImages: ImageData[] = [];
+
+  for (let i = 0; i < filesToAdd.length; i++) {
+    const file = filesToAdd[i];
+
+    // convert to base64
+    const base64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+
+    let filePath = "";
+
+    try {
+      // save to Electron backend
+      if ((window as any).api?.saveImage) {
+        const saved = await (window as any).api.saveImage({
+          base64,
+          name: file.name,
+        });
+
+        filePath = saved.filePath;
+      }
+    } catch (err) {
+      console.error(" Image save failed:", err);
+    }
+
+    newImages.push({
+      id: crypto.randomUUID(),
+      url: base64, 
+      filePath: filePath || "",     // REAL STORAGE PATH
+      label: `Image ${images.length + i + 1}`,
       brightness: 100,
       contrast: 100,
-    }));
+    });
+  }
 
-    onImagesAdded(newImages);
+  onImagesAdded(newImages);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
+};
 
   return (
     <div style={{ marginBottom: 20 }}>

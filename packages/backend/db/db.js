@@ -2,13 +2,25 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 const fs = require("fs");
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, "../../data");
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+const { app } = require("electron");
+
+// 🔥 Correct OS-safe storage location
+const userDataPath = app.getPath("userData");
+
+// Create folder if not exists
+if (!fs.existsSync(userDataPath)) {
+  fs.mkdirSync(userDataPath, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, "endoscopy_report_template.db");
+const dbPath = path.join(userDataPath, "endoscopy.db");
+
+const imagesPath = path.join(userDataPath, "images");
+
+if (!fs.existsSync(imagesPath)) {
+  fs.mkdirSync(imagesPath, { recursive: true });
+}
+
+console.log("📁 Images folder:", imagesPath);
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {

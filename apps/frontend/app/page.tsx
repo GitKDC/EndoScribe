@@ -62,7 +62,7 @@ export default function Dashboard() {
     try {
       const data = await (window as any).api.getDoctors();
       setDoctors(data || []);
-    } catch (err) {
+    } catch (err) {   
       console.error("Failed to load doctors:", err);
     }
   };
@@ -222,7 +222,8 @@ export default function Dashboard() {
             <p style={{ margin: "8px 0 20px", color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>
               Shobha Hospital &amp; Superspeciality Gastroenterology Centre
             </p>
-            <button
+           <div className="flex flex-row gap-6">
+               <button
               onClick={() => router.push("/create-report")}
               style={{
                 padding: "11px 24px",
@@ -241,6 +242,35 @@ export default function Dashboard() {
             >
               ✏️ New Report
             </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  const res = await (window as any).api.createBackup();
+                  if (res?.success) {
+                    alert("Backup saved:\n" + res.path);
+                  }
+                } catch {
+                  alert("Backup failed");
+                }
+              }}
+              style={{
+                padding: "11px 24px",
+                background: THEME.teal,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 14px rgba(13,148,136,0.4)",
+              }}>
+              💾 Backup Now
+            </button>
+           </div>
           </div>
         </div>
 

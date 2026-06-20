@@ -1,22 +1,18 @@
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 const fs = require("fs");
+const { app } = require("electron");
+const os = require("os");
 
 // ── Database location ────────────────────────────────────────────────────
-// IMPORTANT: this MUST match the path used by packages/backend/db/db.js
-// (the one the running Electron app connects to), otherwise seeding writes
-// to a *different* database file than the one the app reads from — which
-// is why old/stale templates kept appearing no matter how many times this
-// script was run.
-//
-// db.js resolves to:  packages/backend/db/../../data  =  packages/data
-// So from this file (packages/backend/<this file>), that's:
-const dataDir = path.join(__dirname, "..", "data");
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
+const userDataPath = path.join(
+  os.homedir(),
+  ".config",
+  "endoscopy-electron"
+);
 
-const dbPath = path.join(dataDir, "endoscopy_report_template.db");
+const dbPath = path.join(userDataPath, "endoscopy.db");
+
 console.log("DB PATH:", dbPath);
 
 // ── Force re-seed flag ───────────────────────────────────────────────────

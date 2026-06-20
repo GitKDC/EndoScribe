@@ -34,6 +34,8 @@ interface ReportPreviewProps {
   prefix: string;
   // 🔥 NEW: doctors to render in the footer, in order
   selectedDoctors?: Doctor[];
+  // Report number generated after saving to DB (e.g. "SH-2026-001")
+  reportNumber?: string;
 }
 
 // Maps internal report type codes to the display title shown on the report
@@ -71,6 +73,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
   images,
   prefix,
   selectedDoctors,
+  reportNumber,
 }) => {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "";
@@ -221,6 +224,18 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 ? `${prefix} ${patientName} - ${patientAge}`
                 : "Patient Name"}
             </p>
+            {/* Report number shown after PDF is saved */}
+            {reportNumber && (
+              <p style={{
+                margin: 0, fontSize: "12px", fontWeight: "600",
+                color: "#1a3a52", letterSpacing: "0.3px",
+                border: "1px solid #1a3a52",
+                padding: "1px 8px", borderRadius: "3px",
+                whiteSpace: "nowrap",
+              }}>
+                Ref: {reportNumber}
+              </p>
+            )}
           </div>
 
           {/* Report title */}

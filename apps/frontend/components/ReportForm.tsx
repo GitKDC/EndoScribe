@@ -70,44 +70,6 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const triggerRef = useRef<HTMLDivElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
-  const updateDropdownPosition = () => {
-    if (!triggerRef.current) return;
-
-    const rect = triggerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const dropH = Math.min(220, doctors.length * 58 + 8);
-
-    if (spaceBelow >= dropH + 8) {
-      setDropdownStyle({
-        position: "fixed",
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-        zIndex: 9999,
-        maxHeight: "220px",
-        overflowY: "auto",
-        background: THEME.white,
-        border: `1.5px solid ${THEME.border}`,
-        borderRadius: "8px",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
-      });
-    } else {
-      setDropdownStyle({
-        position: "fixed",
-        bottom: window.innerHeight - rect.top + 4,
-        left: rect.left,
-        width: rect.width,
-        zIndex: 9999,
-        maxHeight: "220px",
-        overflowY: "auto",
-        background: THEME.white,
-        border: `1.5px solid ${THEME.border}`,
-        borderRadius: "8px",
-        boxShadow: "0 -8px 24px rgba(0,0,0,0.14)",
-      });
-    }
-  };
-
   useEffect(() => {
     const loadDoctors = async () => {
       if (!(window as any).api) return;
@@ -128,17 +90,42 @@ const ReportForm: React.FC<ReportFormProps> = ({
 
   // Recalculate dropdown position every time it opens
   useEffect(() => {
-    if (!docMenuOpen) return;
+    if (!docMenuOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropH = Math.min(220, doctors.length * 58 + 8);
 
-    updateDropdownPosition();
-
-    window.addEventListener("scroll", updateDropdownPosition, true);
-    window.addEventListener("resize", updateDropdownPosition);
-
-    return () => {
-      window.removeEventListener("scroll", updateDropdownPosition, true);
-      window.removeEventListener("resize", updateDropdownPosition);
-    };
+    if (spaceBelow >= dropH + 8) {
+      // open downward
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+        maxHeight: "220px",
+        overflowY: "auto",
+        background: THEME.white,
+        border: `1.5px solid ${THEME.border}`,
+        borderRadius: "8px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
+      });
+    } else {
+      // open upward
+      setDropdownStyle({
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+        maxHeight: "220px",
+        overflowY: "auto",
+        background: THEME.white,
+        border: `1.5px solid ${THEME.border}`,
+        borderRadius: "8px",
+        boxShadow: "0 -8px 24px rgba(0,0,0,0.14)",
+      });
+    }
   }, [docMenuOpen, doctors.length]);
 
   const focus = (name: string) => () => setActiveField(name);
@@ -302,8 +289,10 @@ const ReportForm: React.FC<ReportFormProps> = ({
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  minHeight: "37px",
+                  height: "37px",      // fixed height — never grows
+                  overflow: "hidden",
                   userSelect: "none",
+                  padding: "0 10px",
                 }}
               >
                 <span style={{
@@ -312,13 +301,15 @@ const ReportForm: React.FC<ReportFormProps> = ({
                   whiteSpace: "nowrap",
                   minWidth: 0,
                   flex: 1,
-                  color: selectedDoctors.length ? THEME.text : THEME.muted,
-                  fontWeight: selectedDoctors.length ? 600 : 400,
                   fontSize: "13px",
+                  color: selectedDoctors.length ? THEME.text : THEME.muted,
+                  fontWeight: selectedDoctors.length ? 500 : 400,
                 }}>
-                  {selectedDoctors.length
-                    ? selectedDoctors.map(d => d.name.replace(/^Dr\.?\s*/i, "Dr ")).join(", ")
-                    : "Select doctor(s)…"}
+                  {selectedDoctors.length === 0
+                    ? "Select doctor(s)…"
+                    : selectedDoctors.length === 1
+                    ? selectedDoctors[0].name
+                    : `${selectedDoctors[0].name.replace(/^Dr\.?\s*/i, "Dr ")} +${selectedDoctors.length - 1}`}
                 </span>
                 <span style={{ color: THEME.muted, fontSize: "11px", flexShrink: 0 }}>
                   {docMenuOpen ? "▲" : "▼"}

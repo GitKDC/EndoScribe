@@ -69,6 +69,12 @@ async function initializeApp() {
   try {
     // Initialize database
     console.log("🔵 Initializing database...");
+    const { app } = require("electron");
+
+    if (!app.isReady()) {
+      await app.whenReady();
+    }
+
     db = require("../../packages/backend/db/db");
 
     // Register Report IPC handlers
@@ -76,9 +82,15 @@ async function initializeApp() {
     const reportHandlers = require("../../packages/backend/ipc/reportHandlers");
     reportHandlers.registerReportHandlers();
 
+    const imageHandlers = require("../../packages/backend/ipc/imageHandlers");
+    imageHandlers.registerImageHandlers();
+
     console.log("🔵 Registering Template IPC handlers...");
     const templateHandlers = require("../../packages/backend/ipc/templateHandlers");
     templateHandlers.registerTemplateHandlers();
+
+    const backupHandlers = require("../../packages/backend/ipc/backupHandlers");
+    backupHandlers.registerBackupHandlers();
 
     // 🔥 NEW: Register Doctor IPC handlers
     console.log("🔵 Registering Doctor IPC handlers...");

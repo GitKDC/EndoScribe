@@ -33,6 +33,7 @@ type ImageData = {
   id: string;
   url: string;
   label: string;
+  filePath?: string;
 };
 
 type ActionState = "idle" | "loading" | "success" | "error";
@@ -82,8 +83,9 @@ export default function Home() {
   const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
   const [reportType,  setReportType]  = useState("UGI");
   const [doctorName,  setDoctorName]  = useState("Dr Your Name");
-  const [images,      setImages]      = useState<ImageData[]>([]);
-  const [prefix, setPrefix] = useState("Mr");
+  const [images,        setImages]        = useState<ImageData[]>([]);
+  const [prefix,        setPrefix]        = useState("Mr");
+  const [reportNumber,  setReportNumber]  = useState<string | null>(null); // e.g. "SH-2026-001"
 
   // 🔥 NEW: doctors selected for this report's footer
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -190,6 +192,7 @@ export default function Home() {
     setReportType("UGI");
     setSections([]);
     setImages([]);
+    setReportNumber(null);
     // Reset doctor selection back to defaults
     const defaults = doctors.filter((d) => d.is_default).map((d) => d.id);
     setSelectedDoctorIds(defaults);
@@ -220,9 +223,42 @@ export default function Home() {
     }
   };
 
-  const handlePrint       = () => runAction(setPrintState, printReport,                    "Sent to printer ✓",     "Print failed");
-  const handleDownloadPDF = () => runAction(setPdfState,   () => generatePDF(reportDate, patientName, reportType, patientAge),  "PDF downloaded ✓",      "PDF failed");
-  const handleExportImage = () => runAction(setImgState,   () => exportAsImage(reportDate, patientName, reportType, patientAge),"Image exported ✓",      "Export failed");
+  const handlePrint       = () => runAction(setPrintState, printReport, "Sent to printer ✓", "Print failed");
+  const handleExportImage = () => runAction(setImgState,   () => exportAsImage(reportDate, patientName, reportType, patientAge), "Image exported ✓", "Export failed");
+
+  const handleDownloadPDF = () => runAction(setPdfState, async () => {
+    // ── 1. Save report to DB (auto, no extra button needed) ──────────────────
+    let savedReportNo = reportNumber; // reuse if already saved
+    if (!(window as any).api) {
+      // running in browser dev mode — skip DB save
+      savedReportNo = null;
+    } else if (!savedReportNo) {
+      try {
+        const primaryDoctorId = selectedDoctorIds[0] ?? null;
+        const saved = await (window as any).api.saveReport({
+          patientPrefix: prefix,
+          patientName,
+          age:      patientAge ? parseInt(patientAge) : null,
+          gender:   patientAge?.includes("/F") ? "F" : "M",
+          doctorId: primaryDoctorId,
+          reportType,
+          sections,
+          images: images.map((img, i) => ({
+            filePath: img.filePath,
+            position: i,
+          })),
+        });
+        savedReportNo = saved?.reportNumber ?? null;
+        if (savedReportNo) setReportNumber(savedReportNo);
+      } catch (saveErr) {
+        // Non-fatal — PDF still generates even if DB save fails
+        console.error("DB save failed (non-fatal):", saveErr);
+      }
+    }
+
+    // ── 2. Generate PDF (report number now visible in preview) ───────────────
+    await generatePDF(reportDate, patientName, reportType, patientAge);
+  }, reportNumber ? `Report ${reportNumber} — PDF downloaded ✓` : "PDF downloaded ✓", "PDF failed");
 
   // 🔥 NEW: resolve selected doctor IDs into full doctor objects, in the
   // order they were selected, for the preview footer.
@@ -475,6 +511,7 @@ export default function Home() {
                 images={images}
                 prefix={prefix}
                 selectedDoctors={selectedDoctorObjects}
+                reportNumber={reportNumber ?? undefined}
               />
             </div>
           </div>

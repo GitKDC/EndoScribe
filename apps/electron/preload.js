@@ -3,129 +3,48 @@ const { contextBridge, ipcRenderer } = require("electron");
 console.log("✅ Preload script loaded");
 
 contextBridge.exposeInMainWorld("api", {
-  // ─── TEMPLATE APIs ─────────────────────────────
-  getTemplates: async () => {
-    try {
-      console.log("📤 getTemplates()");
-      const res = await ipcRenderer.invoke("get-templates");
-      console.log("📥 Templates:", res);
-      return res;
-    } catch (err) {
-      console.error("❌ getTemplates error:", err);
-      throw err;
-    }
-  },
+  // ─── TEMPLATE APIs ──────────────────────────────────────────────────────
+  getTemplates:   async ()       => ipcRenderer.invoke("get-templates"),
+  getTemplate:    async (id)     => ipcRenderer.invoke("get-template", id),
+  createTemplate: async (data)   => ipcRenderer.invoke("create-template", data),
+  updateTemplate: async (id, d)  => ipcRenderer.invoke("update-template", id, d),
+  deleteTemplate: async (id)     => ipcRenderer.invoke("delete-template", id),
 
-  getTemplate: async (id) => {
-    try {
-      console.log(`📤 getTemplate(${id})`);
-      const res = await ipcRenderer.invoke("get-template", id);
-      console.log("📥 Template:", res);
-      return res;
-    } catch (err) {
-      console.error("❌ getTemplate error:", err);
-      throw err;
-    }
-  },
+  // ─── DOCTOR APIs ────────────────────────────────────────────────────────
+  getDoctors:   async ()       => ipcRenderer.invoke("get-doctors"),
+  getDoctor:    async (id)     => ipcRenderer.invoke("get-doctor", id),
+  createDoctor: async (data)   => ipcRenderer.invoke("create-doctor", data),
+  updateDoctor: async (id, d)  => ipcRenderer.invoke("update-doctor", id, d),
+  deleteDoctor: async (id)     => ipcRenderer.invoke("delete-doctor", id),
 
-  createTemplate: async (data) => {
-    try {
-      console.log("📤 createTemplate", data);
-      return await ipcRenderer.invoke("create-template", data);
-    } catch (err) {
-      console.error("❌ createTemplate error:", err);
-      throw err;
-    }
-  },
+  // ─── REPORT APIs ────────────────────────────────────────────────────────
+  // Generate (returns sections for live preview — does NOT save to DB)
+  generateReport: async (data) => ipcRenderer.invoke("generate-report", data),
+  saveImage: async (data) => ipcRenderer.invoke("save-image", data),
+  // Save to DB right before PDF export — returns { id, reportNumber }
+  saveReport:    async (data)  => ipcRenderer.invoke("save-report", data),
 
-  updateTemplate: async (id, data) => {
-    try {
-      console.log("📤 updateTemplate", id, data);
-      return await ipcRenderer.invoke("update-template", id, data);
-    } catch (err) {
-      console.error("❌ updateTemplate error:", err);
-      throw err;
-    }
-  },
+  // Reports list / detail
+  getAllReports: async ()      => ipcRenderer.invoke("get-all-reports"),
+  getReport:    async (id)     => ipcRenderer.invoke("get-report", id),
 
-  deleteTemplate: async (id) => {
-    try {
-      console.log("📤 deleteTemplate", id);
-      return await ipcRenderer.invoke("delete-template", id);
-    } catch (err) {
-      console.error("❌ deleteTemplate error:", err);
-      throw err;
-    }
-  },
+  // ─── SETTINGS ────────────────────────────────────────────────────────────
+  getSetting: async (key)         => ipcRenderer.invoke("get-setting", key),
+  setSetting: async (key, value)  => ipcRenderer.invoke("set-setting", key, value),
 
-  // ─── DOCTOR APIs ────────────────────────────────
-  getDoctors: async () => {
-    try {
-      console.log("📤 getDoctors()");
-      const res = await ipcRenderer.invoke("get-doctors");
-      console.log("📥 Doctors:", res);
-      return res;
-    } catch (err) {
-      console.error("❌ getDoctors error:", err);
-      throw err;
-    }
-  },
+  // ─── BACKUP APIs ─────────────────────────────────────────────────────────
+  // Manual backup → opens save-file dialog, zips db + images
+  createBackup: async () => ipcRenderer.invoke("create-backup"),
 
-  getDoctor: async (id) => {
-    try {
-      console.log(`📤 getDoctor(${id})`);
-      return await ipcRenderer.invoke("get-doctor", id);
-    } catch (err) {
-      console.error("❌ getDoctor error:", err);
-      throw err;
-    }
-  },
+  // Called on app launch to auto-backup if 30+ days since last
+  checkAutoBackup: async () => ipcRenderer.invoke("check-auto-backup"),
 
-  createDoctor: async (data) => {
-    try {
-      console.log("📤 createDoctor", data);
-      return await ipcRenderer.invoke("create-doctor", data);
-    } catch (err) {
-      console.error("❌ createDoctor error:", err);
-      throw err;
-    }
-  },
+  // Returns { freeGB, totalGB, lowSpace }
+  checkDiskSpace: async () => ipcRenderer.invoke("check-disk-space"),
 
-  updateDoctor: async (id, data) => {
-    try {
-      console.log("📤 updateDoctor", id, data);
-      return await ipcRenderer.invoke("update-doctor", id, data);
-    } catch (err) {
-      console.error("❌ updateDoctor error:", err);
-      throw err;
-    }
-  },
-
-  deleteDoctor: async (id) => {
-    try {
-      console.log("📤 deleteDoctor", id);
-      return await ipcRenderer.invoke("delete-doctor", id);
-    } catch (err) {
-      console.error("❌ deleteDoctor error:", err);
-      throw err;
-    }
-  },
-
-  // ─── REPORT API ────────────────────────────────
-  generateReport: async (data) => {
-    try {
-      console.log("📤 generateReport", data);
-      const res = await ipcRenderer.invoke("generate-report", data);
-      console.log("📥 Report:", res);
-      return res;
-    } catch (err) {
-      console.error("❌ generateReport error:", err);
-      throw err;
-    }
-  },
-
-  // ─── HELPER ───────────────────────────────────
-  isElectron: () => true,
+  // ─── MISC ────────────────────────────────────────────────────────────────
+  getAppDataPath: () => ipcRenderer.invoke("get-app-data-path"),
+  isElectron:     () => true,
 });
 
 console.log("✅ API bridge ready");
