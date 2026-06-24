@@ -43,10 +43,14 @@ if (fs.existsSync(migrationPath)) {
       console.error("❌ Migration error:", err);
     } else {
       console.log("✅ Migrations completed");
+      const { seedTemplates } = require("./seedTemplates");
+      seedTemplates(db);
     }
   });
 } else {
   console.warn("⚠️ Migration file not found at:", migrationPath);
+  const { seedTemplates } = require("./seedTemplates");
+  seedTemplates(db);
 }
 
 module.exports = db;

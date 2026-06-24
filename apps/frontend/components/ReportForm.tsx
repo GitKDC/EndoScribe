@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { IoIosArrowDown } from "react-icons/io";
+import { SlCalender } from "react-icons/sl";
 
 const THEME = {
   navy:    "#1a3a52",
@@ -132,10 +134,10 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const blur  = () => setActiveField(null);
 
   const inp = (name: string): React.CSSProperties => ({
-    padding: "9px 12px",
+    padding: "12px 14px",
     border: `1.5px solid ${activeField === name ? THEME.teal : THEME.border}`,
     borderRadius: "8px",
-    fontSize: "13px",
+    fontSize: "14px",
     width: "100%",
     boxSizing: "border-box",
     fontFamily: "'Inter', sans-serif",
@@ -158,11 +160,11 @@ const ReportForm: React.FC<ReportFormProps> = ({
   };
 
   const card: React.CSSProperties = {
-    padding: "18px 20px",
+    padding: "24px 26px",
     background: THEME.white,
-    borderRadius: "12px",
+    borderRadius: "14px",
     border: `1px solid ${THEME.border}`,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
   };
 
   const cardHdr: React.CSSProperties = {
@@ -231,6 +233,28 @@ const ReportForm: React.FC<ReportFormProps> = ({
         .rfmt:hover { background: #e2e8f0 !important; }
         .rrem:hover { background: #fee2e2 !important; }
         .doc-opt:hover { background: #f0fdfa !important; }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+        select, input[type="date"] {
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          opacity: 0;
+          position: absolute;
+          right: 0;
+          top: 0;
+          width: 32px;
+          height: 100%;
+          cursor: pointer;
+        }
       `}</style>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "14px", fontFamily: "'Inter', sans-serif" }}>
@@ -243,10 +267,13 @@ const ReportForm: React.FC<ReportFormProps> = ({
             <div style={{ flex: 2 }}>
               <label style={lbl}>Patient Name</label>
               <div style={{ display: "flex", gap: "6px" }}>
-                <select value={prefix} onChange={e => setPrefix(e.target.value)}
-                  style={{ ...inp("pfx"), width: "76px" }}>
-                  <option>Mr.</option><option>Mrs.</option><option>Master.</option><option>Miss.</option>
-                </select>
+                <div style={{ position: "relative", display: "flex", alignItems: "center", width: "76px", flexShrink: 0 }}>
+                  <select value={prefix} onChange={e => setPrefix(e.target.value)}
+                    style={{ ...inp("pfx"), width: "100%", paddingRight: "26px", cursor: "pointer" }}>
+                    <option>Mr.</option><option>Mrs.</option><option>Master.</option><option>Miss.</option>
+                  </select>
+                  <div style={{ position: "absolute", right: "8px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><IoIosArrowDown size={14} /></div>
+                </div>
                 <input type="text" value={patientName} onChange={e => onPatientNameChange(e.target.value)}
                   placeholder="Full name" onFocus={focus("pn")} onBlur={blur}
                   style={{ ...inp("pn"), flex: 1 }} />
@@ -259,11 +286,14 @@ const ReportForm: React.FC<ReportFormProps> = ({
                   onChange={e => { setAge(e.target.value); if (e.target.value) onPatientAgeChange(`${e.target.value}Yrs/${gender}`); }}
                   placeholder="Age" onFocus={focus("age")} onBlur={blur}
                   style={{ ...inp("age"), flex: 1 }} />
-                <select value={gender}
-                  onChange={e => { setGender(e.target.value); if (age) onPatientAgeChange(`${age}Yrs/${e.target.value}`); }}
-                  style={{ ...inp("gen"), width: "66px" }}>
-                  <option value="M">M</option><option value="F">F</option>
-                </select>
+                <div style={{ position: "relative", display: "flex", alignItems: "center", width: "66px", flexShrink: 0 }}>
+                  <select value={gender}
+                    onChange={e => { setGender(e.target.value); if (age) onPatientAgeChange(`${age}Yrs/${e.target.value}`); }}
+                    style={{ ...inp("gen"), width: "100%", paddingRight: "24px", cursor: "pointer" }}>
+                    <option value="M">M</option><option value="F">F</option>
+                  </select>
+                  <div style={{ position: "absolute", right: "8px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><IoIosArrowDown size={14} /></div>
+                </div>
               </div>
             </div>
           </div>
@@ -271,8 +301,11 @@ const ReportForm: React.FC<ReportFormProps> = ({
           <div style={{ display: "flex", gap: "10px" }}>
             <div style={{ flex: 1 }}>
               <label style={lbl}>Date</label>
-              <input type="date" value={reportDate} onChange={e => onReportDateChange(e.target.value)}
-                onFocus={focus("dt")} onBlur={blur} style={inp("dt")} />
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <input type="date" value={reportDate} onChange={e => onReportDateChange(e.target.value)}
+                  onFocus={focus("dt")} onBlur={blur} style={{ ...inp("dt"), paddingRight: "32px", cursor: "pointer" }} />
+                <div style={{ position: "absolute", right: "12px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><SlCalender size={15} /></div>
+              </div>
             </div>
 
             {/* ── Doctor multi-select — uses fixed positioning to avoid overflow ── */}
@@ -289,7 +322,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  height: "37px",      // fixed height — never grows
+                  height: "44px",      // fixed height — never grows
                   overflow: "hidden",
                   userSelect: "none",
                   padding: "0 10px",
@@ -311,8 +344,8 @@ const ReportForm: React.FC<ReportFormProps> = ({
                     ? selectedDoctors[0].name
                     : `${selectedDoctors[0].name.replace(/^Dr\.?\s*/i, "Dr ")} +${selectedDoctors.length - 1}`}
                 </span>
-                <span style={{ color: THEME.muted, fontSize: "11px", flexShrink: 0 }}>
-                  {docMenuOpen ? "▲" : "▼"}
+                <span style={{ color: THEME.teal, display: "flex", flexShrink: 0, transform: docMenuOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                  <IoIosArrowDown size={16} />
                 </span>
               </div>
 
@@ -366,31 +399,38 @@ const ReportForm: React.FC<ReportFormProps> = ({
 
           <div style={{ marginBottom: "12px" }}>
             <label style={lbl}>Procedure Type</label>
-            <select value={reportType}
-              onChange={e => { onReportTypeChange(e.target.value); setSelectedTemplateId(""); }}
-              onFocus={focus("rt")} onBlur={blur} style={inp("rt")}>
-              <option value="UGI">UGI (Upper GI Endoscopy)</option>
-              <option value="COLONOSCOPY">Colonoscopy</option>
-              <option value="SIGMOIDOSCOPY">Sigmoidoscopy</option>
-              <option value="ERCP">ERCP</option>
-              <option value="ENTEROSCOPY">Enteroscopy</option>
-              <option value="VLS">VLS Scopy</option>
-            </select>
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <select value={reportType}
+                onChange={e => { onReportTypeChange(e.target.value); setSelectedTemplateId(""); }}
+                onFocus={focus("rt")} onBlur={blur} style={{ ...inp("rt"), paddingRight: "32px", cursor: "pointer" }}>
+                <option value="UGI">UGI (Upper GI Endoscopy)</option>
+                <option value="COLONOSCOPY">Colonoscopy</option>
+                <option value="SIGMOIDOSCOPY">Sigmoidoscopy</option>
+                <option value="ERCP">ERCP</option>
+                <option value="ENTEROSCOPY">Enteroscopy</option>
+                <option value="VLS">VLS Scopy</option>
+              </select>
+              <div style={{ position: "absolute", right: "12px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><IoIosArrowDown size={16} /></div>
+            </div>
           </div>
 
           <div>
             <label style={lbl}>Load Template</label>
-            <select value={selectedTemplateId}
-              onChange={e => { const id = Number(e.target.value); setSelectedTemplateId(e.target.value); if (id) onTemplateSelect(id); }}
-              onFocus={focus("tpl")} onBlur={blur}
-              style={{
-                ...inp("tpl"),
-                borderColor: activeField === "tpl" ? THEME.teal : THEME.teal + "55",
-                fontWeight: "500", color: THEME.navy,
-              }}>
-              <option value="">— Select Template —</option>
-              {filteredTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <select value={selectedTemplateId}
+                onChange={e => { const id = Number(e.target.value); setSelectedTemplateId(e.target.value); if (id) onTemplateSelect(id); }}
+                onFocus={focus("tpl")} onBlur={blur}
+                style={{
+                  ...inp("tpl"),
+                  borderColor: activeField === "tpl" ? THEME.teal : THEME.teal + "55",
+                  fontWeight: "500", color: THEME.navy,
+                  paddingRight: "32px", cursor: "pointer"
+                }}>
+                <option value="">— Select Template —</option>
+                {filteredTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <div style={{ position: "absolute", right: "12px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><IoIosArrowDown size={16} /></div>
+            </div>
           </div>
         </div>
 

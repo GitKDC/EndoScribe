@@ -369,9 +369,9 @@ export default function Home() {
           {/* ── LEFT PANEL ─────────────────────────────────────────────────── */}
           <div
             style={{
-              width: "35%",
-              minWidth: "400px",
-              padding: "24px",
+              width: "42%",
+              minWidth: "480px",
+              padding: "32px",
               backgroundColor: "#f8f9fa",
               overflowY: "auto",
               borderRight: "1px solid #dee2e6",
@@ -383,7 +383,7 @@ export default function Home() {
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
               <span style={{ fontSize: "24px" }}>📝</span>
-              <h2 style={{ color: "#1a3a52", margin: 0, fontSize: "20px", fontWeight: "700" }}>
+              <h2 style={{ color: "#1a3a52", margin: 0, fontSize: "20px", fontWeight: "700", fontFamily: "'Inter', sans-serif" }}>
                 EndoScribe: Endoscopy Report Generator 
               </h2>
             </div>
@@ -499,6 +499,7 @@ export default function Home() {
                 borderRadius: "2px",
                 margin: "0 auto",
                 transition: "box-shadow 0.2s ease",
+                zoom: 0.75,
               }}
             >
               <ReportPreview
