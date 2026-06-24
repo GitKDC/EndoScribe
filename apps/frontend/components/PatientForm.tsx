@@ -16,6 +16,10 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return alert("Name is required");
+    if (!age) return alert("Age is required");
+    if (phone.trim() && !/^\d{10}$/.test(phone.trim())) {
+      return alert("Phone number must be exactly 10 digits");
+    }
     
     setSaving(true);
     try {
@@ -73,13 +77,13 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
 
           <div style={{ marginBottom: "16px" }}>
             <label style={lbl}>Phone Number</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} style={inp} placeholder="e.g. 9876543210" />
+            <input value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} style={inp} placeholder="e.g. 9876543210" />
           </div>
 
           <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
             <div style={{ flex: 1 }}>
-              <label style={lbl}>Age</label>
-              <input type="number" value={age} onChange={e => setAge(e.target.value)} style={inp} />
+              <label style={lbl}>Age *</label>
+              <input type="number" required value={age} onChange={e => setAge(e.target.value)} style={inp} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={lbl}>Gender</label>
