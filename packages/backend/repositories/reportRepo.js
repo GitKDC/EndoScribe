@@ -49,6 +49,7 @@ const saveReport = async (data) => {
     patientId,
     patientPrefix = "Mr.",
     patientName,
+    patientPhone,
     age,
     gender,
     doctorId,
@@ -66,7 +67,7 @@ const saveReport = async (data) => {
       await new Promise((res, rej) => {
         db.run(
           "INSERT INTO patients (name, phone, age, gender) VALUES (?, ?, ?, ?)",
-          [patientName, null, age || null, gender || "M"],
+          [patientName, patientPhone || null, age || null, gender || "M"],
           function (err) {
             if (err) return rej(err);
             patientId = this.lastID;

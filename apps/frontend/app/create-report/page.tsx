@@ -80,6 +80,7 @@ export default function Home() {
   // ── Report fields ───────────────────────────────────────────────────────────
   const [patientName, setPatientName] = useState("");
   const [patientId,   setPatientId]   = useState<number | null>(null);
+  const [patientPhone, setPatientPhone] = useState("");
   const [patientAge,  setPatientAge]  = useState("");
   const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
   const [reportType,  setReportType]  = useState("UGI");
@@ -189,6 +190,7 @@ export default function Home() {
   const handleReset = () => {
     setPatientName("");
     setPatientId(null);
+    setPatientPhone("");
     setPatientAge("");
     setReportDate(getCurrentDateForInput());
     setReportType("UGI");
@@ -225,10 +227,39 @@ export default function Home() {
     }
   };
 
-  const handlePrint       = () => runAction(setPrintState, printReport, "Sent to printer ✓", "Print failed");
-  const handleExportImage = () => runAction(setImgState,   () => exportAsImage(reportDate, patientName, reportType, patientAge), "Image exported ✓", "Export failed");
+  // ── Validation ───────────────────────────────────────────────────────────────
+  const validateForm = () => {
+    if (!patientName.trim()) {
+      addToast("Patient name is required", "error");
+      return false;
+    }
+    if (!patientAge.trim()) {
+      addToast("Patient age is required", "error");
+      return false;
+    }
+    if (patientPhone.trim() && !/^\d{10}$/.test(patientPhone.trim())) {
+      addToast("Phone number must be exactly 10 digits", "error");
+      return false;
+    }
+    if (selectedDoctorIds.length === 0) {
+      addToast("Please select at least one doctor", "error");
+      return false;
+    }
+    return true;
+  };
 
-  const handleDownloadPDF = () => runAction(setPdfState, async () => {
+  const handlePrint       = () => {
+    if (!validateForm()) return;
+    runAction(setPrintState, printReport, "Sent to printer ✓", "Print failed");
+  };
+  const handleExportImage = () => {
+    if (!validateForm()) return;
+    runAction(setImgState,   () => exportAsImage(reportDate, patientName, patientAge, reportType, reportNumber ?? undefined), "Image exported ✓", "Export failed");
+  };
+
+  const handleDownloadPDF = () => {
+    if (!validateForm()) return;
+    runAction(setPdfState, async () => {
     // ── 1. Save report to DB (auto, no extra button needed) ──────────────────
     let savedReportNo = reportNumber; // reuse if already saved
     if (!(window as any).api) {
@@ -241,6 +272,7 @@ export default function Home() {
           patientId,
           patientPrefix: prefix,
           patientName,
+          patientPhone,
           age:      patientAge ? parseInt(patientAge) : null,
           gender:   patientAge?.includes("/F") ? "F" : "M",
           doctorId: primaryDoctorId,
@@ -260,8 +292,9 @@ export default function Home() {
     }
 
     // ── 2. Generate PDF (report number now visible in preview) ───────────────
-    await generatePDF(reportDate, patientName, reportType, patientAge);
+    await generatePDF(reportDate, patientName, patientAge, reportType, savedReportNo ?? undefined);
   }, reportNumber ? `Report ${reportNumber} — PDF downloaded ✓` : "PDF downloaded ✓", "PDF failed");
+  };
 
   // 🔥 NEW: resolve selected doctor IDs into full doctor objects, in the
   // order they were selected, for the preview footer.
@@ -412,6 +445,7 @@ export default function Home() {
             {/* Form */}
             <ReportForm
               patientName={patientName}
+              patientPhone={patientPhone}
               patientAge={patientAge}
               reportDate={reportDate}
               reportType={reportType}
@@ -422,6 +456,7 @@ export default function Home() {
               selectedDoctorIds={selectedDoctorIds}
               setSelectedDoctorIds={setSelectedDoctorIds}
               onPatientNameChange={(v) => { setPatientName(v); setPatientId(null); }}
+              onPatientPhoneChange={setPatientPhone}
               onPatientIdChange={setPatientId}
               onPatientAgeChange={setPatientAge}
               onReportDateChange={setReportDate}

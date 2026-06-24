@@ -8,6 +8,12 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 10;
+  const totalPages = Math.ceil(total / limit) || 1;
 
   // Modals state
   const [showForm, setShowForm] = useState(false);
@@ -31,8 +37,14 @@ export default function PatientsPage() {
     if (!(window as any).api) return;
     setLoading(true);
     try {
-      const data = await (window as any).api.getPatients(search);
-      setPatients(data);
+      const res = await (window as any).api.getPatients({ search, page, limit });
+      if (Array.isArray(res)) {
+        setPatients(res);
+        setTotal(res.length);
+      } else {
+        setPatients(res.data || []);
+        setTotal(res.total || 0);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -40,13 +52,17 @@ export default function PatientsPage() {
     }
   };
 
+  // Reset page when search changes
   useEffect(() => {
-    // debounce search
+    setPage(1);
+  }, [search]);
+
+  useEffect(() => {
     const t = setTimeout(() => {
       fetchPatients();
     }, 300);
     return () => clearTimeout(t);
-  }, [search]);
+  }, [search, page]);
 
   const handleOpenProfile = async (id: number) => {
     const p = await (window as any).api.getPatient(id);
@@ -141,6 +157,34 @@ export default function PatientsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* PAGINATION */}
+      {!loading && total > 0 && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "24px", background: "white", padding: "16px 24px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+          <span style={{ fontSize: "14px", color: "#64748b", fontWeight: "500" }}>
+            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} patients
+          </span>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button 
+              disabled={page === 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: page === 1 ? "#f8fafc" : "white", color: page === 1 ? "#94a3b8" : "#334155", cursor: page === 1 ? "not-allowed" : "pointer", fontWeight: "600", fontSize: "13px" }}
+            >
+              Previous
+            </button>
+            <span style={{ display: "flex", alignItems: "center", padding: "0 12px", fontSize: "14px", fontWeight: "600", color: "#334155" }}>
+              Page {page} of {totalPages}
+            </span>
+            <button 
+              disabled={page === totalPages}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: page === totalPages ? "#f8fafc" : "white", color: page === totalPages ? "#94a3b8" : "#334155", cursor: page === totalPages ? "not-allowed" : "pointer", fontWeight: "600", fontSize: "13px" }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODALS */}
       {showForm && (

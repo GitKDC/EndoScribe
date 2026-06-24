@@ -35,6 +35,7 @@ interface Doctor {
 
 interface ReportFormProps {
   patientName: string;
+  patientPhone: string;
   patientAge: string;
   reportDate: string;
   reportType: string;
@@ -46,6 +47,7 @@ interface ReportFormProps {
   selectedDoctorIds: number[];
   setSelectedDoctorIds: React.Dispatch<React.SetStateAction<number[]>>;
   onPatientNameChange: (v: string) => void;
+  onPatientPhoneChange: (v: string) => void;
   onPatientIdChange?:  (id: number | null) => void;
   onPatientAgeChange:  (v: string) => void;
   onReportDateChange:  (v: string) => void;
@@ -55,10 +57,10 @@ interface ReportFormProps {
 }
 
 const ReportForm: React.FC<ReportFormProps> = ({
-  patientName, patientAge, reportDate, reportType, prefix,
+  patientName, patientPhone, patientAge, reportDate, reportType, prefix,
   sections, setSections, templates,
   selectedDoctorIds, setSelectedDoctorIds,
-  onPatientNameChange, onPatientIdChange, onPatientAgeChange, onReportDateChange,
+  onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange, onReportDateChange,
   onReportTypeChange, onTemplateSelect, setPrefix,
 }) => {
   const [activeField, setActiveField] = useState<string | null>(null);
@@ -97,8 +99,8 @@ const ReportForm: React.FC<ReportFormProps> = ({
     const loadPatients = async () => {
       if (!(window as any).api) return;
       try {
-        const data = await (window as any).api.getPatients("");
-        setPatients(data || []);
+        const res = await (window as any).api.getPatients({ limit: 500 });
+        setPatients(Array.isArray(res) ? res : (res?.data || []));
       } catch (err) {
         console.error("Failed to load patients:", err);
       }
@@ -329,6 +331,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
                           <div key={p.id} className="pat-sug"
                             onClick={() => {
                               onPatientNameChange(p.name);
+                              onPatientPhoneChange(p.phone || "");
                               if (onPatientIdChange) onPatientIdChange(p.id);
                               
                               setPrefix(p.gender === "M" ? "Mr." : "Mrs.");
@@ -343,7 +346,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
                               display: "flex", justifyContent: "space-between", alignItems: "center"
                             }}
                           >
-                            <span style={{ fontSize: "13px", fontWeight: "600", color: THEME.navy }}>{p.name}</span>
+                            <span style={{ fontSize: "13px", fontWeight: "600", color: THEME.navy }}>{p.name} {p.phone && <span style={{ color: THEME.muted, fontWeight: "400", marginLeft: "6px" }}>📞 {p.phone}</span>}</span>
                             <span style={{ fontSize: "11px", color: THEME.muted }}>{p.age} Yrs • {p.gender}</span>
                           </div>
                         ))
@@ -353,6 +356,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
                 </div>
               </div>
             </div>
+
             <div style={{ flex: 1 }}>
               <label style={lbl}>Age / Gender</label>
               <div style={{ display: "flex", gap: "6px" }}>
@@ -372,6 +376,16 @@ const ReportForm: React.FC<ReportFormProps> = ({
             </div>
           </div>
 
+          <div style={{ marginBottom: "12px" }}>
+            <label style={lbl}>Phone</label>
+            <input type="text" value={patientPhone} onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  onPatientPhoneChange(val);
+                }}
+              placeholder="Phone No." onFocus={focus("ph")} onBlur={blur}
+              style={{ ...inp("ph"), width: "100%" }} />
+          </div>
+
           <div style={{ display: "flex", gap: "10px" }}>
             <div style={{ flex: 1 }}>
               <label style={lbl}>Date</label>
@@ -383,7 +397,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
             </div>
 
             {/* ── Doctor multi-select — uses fixed positioning to avoid overflow ── */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1.5 }}>
               <label style={lbl}>Doctor(s)</label>
               <div
                 ref={triggerRef}

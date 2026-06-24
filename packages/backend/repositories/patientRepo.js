@@ -17,28 +17,46 @@ const patientRepo = {
   },
 
   // Get patients with optional search, including report count and last visit
-  searchPatients: (searchQuery = "") => {
+  searchPatients: (filters = {}) => {
     return new Promise((resolve, reject) => {
-      let query = `
-        SELECT 
-          p.id, p.name, p.phone, p.age, p.gender, p.created_at,
-          COUNT(r.id) as report_count,
-          MAX(r.created_at) as last_visit
-        FROM patients p
-        LEFT JOIN reports r ON p.id = r.patient_id
-      `;
-      
-      const params = [];
-      if (searchQuery) {
-        query += ` WHERE p.name LIKE ? OR p.phone LIKE ?`;
-        params.push(`%${searchQuery}%`, `%${searchQuery}%`);
-      }
-      
-      query += ` GROUP BY p.id ORDER BY p.updated_at DESC`;
+      // Fallback for backwards compatibility if passed as a string
+      const isString = typeof filters === 'string';
+      const search = isString ? filters : (filters.search || "");
+      const page = isString ? 1 : (filters.page || 1);
+      const limit = isString ? 50 : (filters.limit || 10);
+      const offset = (page - 1) * limit;
 
-      db.all(query, params, (err, rows) => {
+      let baseQuery = `
+        FROM patients p
+      `;
+      let countParams = [];
+      
+      if (search) {
+        baseQuery += ` WHERE p.name LIKE ? OR p.phone LIKE ?`;
+        countParams.push(`%${search}%`, `%${search}%`);
+      }
+
+      // Count total matching records
+      const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+      
+      db.get(countQuery, countParams, (err, countResult) => {
         if (err) return reject(err);
-        resolve(rows);
+        const total = countResult.total;
+
+        let dataQuery = `
+          SELECT 
+            p.id, p.name, p.phone, p.age, p.gender, p.created_at,
+            (SELECT COUNT(*) FROM reports r WHERE r.patient_id = p.id) as report_count,
+            (SELECT MAX(created_at) FROM reports r WHERE r.patient_id = p.id) as last_visit
+          ${baseQuery}
+          ORDER BY p.updated_at DESC
+          LIMIT ? OFFSET ?
+        `;
+
+        db.all(dataQuery, [...countParams, limit, offset], (err, rows) => {
+          if (err) return reject(err);
+          resolve({ data: rows, total });
+        });
       });
     });
   },

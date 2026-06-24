@@ -55,7 +55,8 @@ const formatFileName = (
   patientName: string,
   category: string,
   reportDate: string,
-  ageGender: string
+  ageGender: string,
+  reportNumber?: string
 ) => {
   const safe = (str: string) =>
     str
@@ -67,7 +68,8 @@ const formatFileName = (
     ? reportDate.replace(/[^0-9-]/g, "")
     : new Date().toISOString().split("T")[0];
 
-  return `${safe(patientName)}-${safe(category)}-${safeDate}-${safe(ageGender)}`;
+  const base = `${safe(patientName)}-${safe(category)}-${safeDate}-${safe(ageGender)}`;
+  return reportNumber ? `${base}-${safe(reportNumber)}` : base;
 };
 
 /** Wait for every <img> to finish loading. */
@@ -185,7 +187,7 @@ const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
 };
 
 // ── PDF ────────────────────────────────────────────────────────────────────────
-export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string): Promise<void> => {
+export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string): Promise<void> => {
   const canvas = await captureReport(3);
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -194,7 +196,7 @@ export const generatePDF = async (reportDate: string, patientName: string, patie
   pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, A4_MM_W, A4_MM_H);
 
   pdf.save(
-  `${formatFileName(patientName, reportType, reportDate, patientAge)}.pdf`
+  `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.pdf`
 );
 };
 
@@ -239,13 +241,13 @@ ${cloned.outerHTML}
 };
 
 // ── PNG export ─────────────────────────────────────────────────────────────────
-export const exportAsImage = async (reportDate: string, patientName: string, patientAge: string, reportType: string): Promise<void> => {
+export const exportAsImage = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string): Promise<void> => {
   const canvas = await captureReport(3);
 
   const link    = document.createElement("a");
   link.href     = canvas.toDataURL("image/png");
   link.download =
-  `${formatFileName(patientName, reportType, reportDate, patientAge)}.png`;
+  `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.png`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
