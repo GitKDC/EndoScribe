@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 
 const THEME = {
   navy:    "#1a3a52",
-  navyDark:"#0f2a3f",
   teal:    "#0d9488",
   tealBg:  "#ccfbf1",
   border:  "#e2e8f0",
-  bg:      "#f0f4f8",
+  bg:      "#f4f7f6",
   white:   "#ffffff",
   text:    "#1e293b",
   muted:   "#64748b",
@@ -167,14 +166,12 @@ export default function TemplatePage() {
 
         {/* ── Header ──────────────────────────────────────────── */}
         <div style={{
-          background: `linear-gradient(135deg, ${THEME.navyDark}, ${THEME.navy})`,
-          padding: "24px 32px",
-          color: "white",
+          padding: "32px 32px 10px 32px",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "22px", fontWeight: "800" }}>🗂️ Template Manager</h1>
-            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.65)" }}>
+            <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", margin: 0 }}>Template Manager</h2>
+            <p style={{ margin: "4px 0 0", fontSize: "14px", color: THEME.muted, fontWeight: "500" }}>
               {templates.length} templates across {CATEGORIES.length} procedure types
             </p>
           </div>
@@ -183,15 +180,22 @@ export default function TemplatePage() {
             border: "none", borderRadius: "8px", fontSize: "14px",
             fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
             boxShadow: "0 4px 12px rgba(13,148,136,0.35)",
-          }}>
+            transition: "transform 0.1s"
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          >
             + New Template
           </button>
         </div>
 
-        <div style={{ padding: "24px 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ padding: "10px 32px 24px 32px", display: "flex", flexDirection: "column", gap: "24px" }}>
 
           {/* ── Filters ─────────────────────────────────────── */}
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ 
+            display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap",
+            background: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
+          }}>
             <input
               placeholder="🔍 Search templates…"
               value={search}
@@ -325,18 +329,18 @@ export default function TemplatePage() {
           }}>
             {/* Modal header */}
             <div style={{
-              background: `linear-gradient(135deg, ${THEME.navyDark}, ${THEME.navy})`,
-              color: "white", padding: "20px 24px",
-              borderRadius: "16px 16px 0 0",
+              background: THEME.white,
+              color: THEME.navy, padding: "20px 24px",
+              borderRadius: "16px 16px 0 0", borderBottom: `1px solid ${THEME.border}`,
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
               <h2 style={{ margin: 0, fontSize: "17px", fontWeight: "700" }}>
                 {editTarget ? "✏️ Edit Template" : "➕ New Template"}
               </h2>
               <button onClick={() => setShowModal(false)} style={{
-                background: "rgba(255,255,255,0.15)", border: "none",
-                color: "white", width: "30px", height: "30px",
-                borderRadius: "50%", cursor: "pointer", fontSize: "18px",
+                background: "transparent", border: "none",
+                color: THEME.muted, width: "30px", height: "30px",
+                borderRadius: "50%", cursor: "pointer", fontSize: "22px",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>×</button>
             </div>

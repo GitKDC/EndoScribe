@@ -1,4 +1,5 @@
 const db = require("../db/db");
+const fs = require("fs");
 
 // ─── Get a setting value ─────────────────────────────────────────────────────
 const getSetting = (key) => {
@@ -44,7 +45,8 @@ const generateReportNumber = async () => {
 
 // ─── Save a report to the DB ─────────────────────────────────────────────────
 const saveReport = async (data) => {
-  const {
+  let {
+    patientId,
     patientPrefix = "Mr.",
     patientName,
     age,
@@ -58,12 +60,31 @@ const saveReport = async (data) => {
 
   const reportNumber = await generateReportNumber();
 
+  // 🔥 Auto-create patient if not provided
+  if (!patientId && patientName) {
+    try {
+      await new Promise((res, rej) => {
+        db.run(
+          "INSERT INTO patients (name, phone, age, gender) VALUES (?, ?, ?, ?)",
+          [patientName, null, age || null, gender || "M"],
+          function (err) {
+            if (err) return rej(err);
+            patientId = this.lastID;
+            res();
+          }
+        );
+      });
+    } catch (err) {
+      console.error("Failed to auto-create patient:", err);
+    }
+  }
+
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO reports
        (report_number, patient_prefix, patient_name, age, gender,
-        doctor_id, template_id, report_type, sections)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        doctor_id, template_id, report_type, sections, patient_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         reportNumber,
         patientPrefix,
@@ -74,6 +95,7 @@ const saveReport = async (data) => {
         templateId || null,
         reportType || "UPPER GI ENDOSCOPY",
         JSON.stringify(sections || []),
+        patientId || null,
       ],
       function (err) {
         if (err) return reject(err);
@@ -103,22 +125,63 @@ const saveReport = async (data) => {
   });
 };
 
-// ─── Get all reports (list view) ─────────────────────────────────────────────
-const getAllReports = () => {
+// ─── Get all reports (list view with pagination & filters) ─────────────────────
+const getAllReports = (filters = {}) => {
   return new Promise((resolve, reject) => {
-    db.all(
-      `SELECT r.id, r.report_number, r.patient_prefix, r.patient_name,
-              r.age, r.gender, r.report_type, r.created_at,
-              d.name AS doctor_name
-       FROM reports r
-       LEFT JOIN doctors d ON r.doctor_id = d.id
-       ORDER BY r.created_at DESC`,
-      [],
-      (err, rows) => {
+    const { page = 1, limit = 10, search = "", startDate, endDate, procedure, doctorId } = filters;
+    
+    let baseQuery = `
+      FROM reports r
+      LEFT JOIN doctors d ON r.doctor_id = d.id
+      WHERE 1=1
+    `;
+    let countParams = [];
+    
+    if (search) {
+      baseQuery += ` AND r.patient_name LIKE ?`;
+      countParams.push(`%${search}%`);
+    }
+    if (startDate && endDate) {
+      baseQuery += ` AND date(r.created_at) BETWEEN date(?) AND date(?)`;
+      countParams.push(startDate, endDate);
+    }
+    if (procedure && procedure !== "All") {
+      baseQuery += ` AND r.report_type = ?`;
+      countParams.push(procedure);
+    }
+    if (doctorId && doctorId !== "All") {
+      baseQuery += ` AND r.doctor_id = ?`;
+      countParams.push(doctorId);
+    }
+    
+    // First, get total count
+    db.get(`SELECT COUNT(*) as total ${baseQuery}`, countParams, (err, countRow) => {
+      if (err) return reject(err);
+      
+      const totalItems = countRow.total || 0;
+      const totalPages = Math.ceil(totalItems / limit);
+      
+      const offset = (page - 1) * limit;
+      let dataQuery = `
+        SELECT r.id, r.report_number, r.patient_prefix, r.patient_name,
+               r.age, r.gender, r.report_type, r.created_at,
+               d.name AS doctor_name
+        ${baseQuery}
+        ORDER BY r.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      const dataParams = [...countParams, limit, offset];
+      
+      db.all(dataQuery, dataParams, (err, rows) => {
         if (err) return reject(err);
-        resolve(rows || []);
-      }
-    );
+        resolve({
+          data: rows || [],
+          totalItems,
+          totalPages,
+          currentPage: page
+        });
+      });
+    });
   });
 };
 

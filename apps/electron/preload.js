@@ -16,6 +16,12 @@ contextBridge.exposeInMainWorld("api", {
   createDoctor: async (data)   => ipcRenderer.invoke("create-doctor", data),
   updateDoctor: async (id, d)  => ipcRenderer.invoke("update-doctor", id, d),
   deleteDoctor: async (id)     => ipcRenderer.invoke("delete-doctor", id),
+  // ─── PATIENT APIs ─────────────────────────────────────────────────────────
+  getPatients:   async (query)  => ipcRenderer.invoke("get-patients", query),
+  getPatient:    async (id)     => ipcRenderer.invoke("get-patient", id),
+  createPatient: async (data)   => ipcRenderer.invoke("create-patient", data),
+  updatePatient: async (id, d)  => ipcRenderer.invoke("update-patient", { id, ...d }),
+  deletePatient: async (id)     => ipcRenderer.invoke("delete-patient", id),
 
   // ─── REPORT APIs ────────────────────────────────────────────────────────
   // Generate (returns sections for live preview — does NOT save to DB)
@@ -25,7 +31,7 @@ contextBridge.exposeInMainWorld("api", {
   saveReport:    async (data)  => ipcRenderer.invoke("save-report", data),
 
   // Reports list / detail
-  getAllReports: async ()      => ipcRenderer.invoke("get-all-reports"),
+  getAllReports: async (filters) => ipcRenderer.invoke("get-all-reports", filters),
   getReport:    async (id)     => ipcRenderer.invoke("get-report", id),
 
   // ─── SETTINGS ────────────────────────────────────────────────────────────

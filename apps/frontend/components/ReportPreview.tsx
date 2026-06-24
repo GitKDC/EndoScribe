@@ -115,16 +115,18 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       <span
         style={{
           position: "absolute",
-          top: "5px",
-          left: "5px",
-          backgroundColor: "rgba(255,200,0,0.88)",
-          color: "#111",
-          fontSize: "10px",
-          fontWeight: "bold",
-          padding: "2px 5px",
-          borderRadius: "2px",
-          lineHeight: 1.4,
-          zIndex: 1,
+          top: "6px",
+          left: "6px",
+          backgroundColor: "#FFD54F",     
+          color: "#000",
+          fontSize: "16px",              
+          fontWeight: "700",              
+          letterSpacing: "0.5px",
+          padding: "4px 8px",             
+          borderRadius: "3px",
+          border: "1px solid #bfa000",   
+          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+          zIndex: 2,
         }}
       >
         {label}
@@ -192,7 +194,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           minHeight: 0,
           display: "flex",
           gap: "16px",
-          padding: "12px 24px 0 24px",
+          padding: "12px 24px 0 44px", // Increased left padding for hole punching
           overflow: "hidden",
         }}
       >
@@ -326,10 +328,10 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 gap: "8px",
                 marginTop: "auto",
                 marginBottom: "16px",
-                height: "150px",
+                height: "190px",
               }}
             >
-              {bottomImages.map((img, idx) => (
+              {[...bottomImages].reverse().map((img, idx, arr) => (
                 <div
                   key={img.id}
                   style={{
@@ -337,7 +339,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                     maxWidth: "calc(50% - 4px)",
                     position: "relative",
                     overflow: "hidden",
-                    marginLeft: bottomImages.length === 1 && idx === 0 ? "auto" : undefined,
+                    marginLeft: arr.length === 1 && idx === 0 ? "auto" : undefined,
                   }}
                 >
                   <img
@@ -402,26 +404,26 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 style={{
                   flex: 1,
                   minHeight: 0,
-                  position: "relative",
-                  overflow: "hidden",
                   display: "flex",
                   justifyContent: "flex-end",
                 }}
               >
-                <img
-                  src={img.url}
-                  alt={img.label}
-                  data-brightness={img.brightness ?? 100}
-                  data-contrast={img.contrast ?? 100}
-                  style={{
-                    width: "80%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
-                    filter: filterFor(img),
-                  }}
-                />
-                <NbiLabel label={img.nbiLabel} />
+                <div style={{ position: "relative", width: "80%", height: "100%", overflow: "hidden" }}>
+                  <img
+                    src={img.url}
+                    alt={img.label}
+                    data-brightness={img.brightness ?? 100}
+                    data-contrast={img.contrast ?? 100}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                      filter: filterFor(img),
+                    }}
+                  />
+                  <NbiLabel label={img.nbiLabel} />
+                </div>
               </div>
             ))}
           </div>
@@ -438,7 +440,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       <div
         style={{
           flexShrink: 0,
-          padding: "8px 20px",
+          padding: "8px 24px 8px 44px", // Increased left padding for hole punching
           borderTop: "1px solid #ccc",
           display: "flex",
           justifyContent: "space-between",

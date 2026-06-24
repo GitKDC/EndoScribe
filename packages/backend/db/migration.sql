@@ -1,3 +1,13 @@
+CREATE TABLE IF NOT EXISTS patients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT,
+  age INTEGER,
+  gender TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS templates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
@@ -52,3 +62,4 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_backup_enabled', '1');
 
 -- Add new columns to existing reports table if upgrading
 -- (ALTER TABLE fails silently in older SQLite if column exists)
+ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id);

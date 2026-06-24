@@ -79,6 +79,7 @@ export default function Home() {
 
   // ── Report fields ───────────────────────────────────────────────────────────
   const [patientName, setPatientName] = useState("");
+  const [patientId,   setPatientId]   = useState<number | null>(null);
   const [patientAge,  setPatientAge]  = useState("");
   const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
   const [reportType,  setReportType]  = useState("UGI");
@@ -187,6 +188,7 @@ export default function Home() {
   // ── Reset ────────────────────────────────────────────────────────────────────
   const handleReset = () => {
     setPatientName("");
+    setPatientId(null);
     setPatientAge("");
     setReportDate(getCurrentDateForInput());
     setReportType("UGI");
@@ -236,6 +238,7 @@ export default function Home() {
       try {
         const primaryDoctorId = selectedDoctorIds[0] ?? null;
         const saved = await (window as any).api.saveReport({
+          patientId,
           patientPrefix: prefix,
           patientName,
           age:      patientAge ? parseInt(patientAge) : null,
@@ -418,7 +421,8 @@ export default function Home() {
               setSections={setSections}
               selectedDoctorIds={selectedDoctorIds}
               setSelectedDoctorIds={setSelectedDoctorIds}
-              onPatientNameChange={setPatientName}
+              onPatientNameChange={(v) => { setPatientName(v); setPatientId(null); }}
+              onPatientIdChange={setPatientId}
               onPatientAgeChange={setPatientAge}
               onReportDateChange={setReportDate}
               onReportTypeChange={handleReportTypeChange}

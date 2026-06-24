@@ -4,6 +4,8 @@ interface ImageData {
   id: string;
   url: string;
   label: string;
+  nbiLabel?: string;
+  isNbi?: boolean;
   brightness?: number;
   filePath?: string;
   contrast?: number;
@@ -141,18 +143,42 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     border: "1px solid #ddd",
                   }}
                 />
-                <input
-                  type="text"
-                  value={img.label}
-                  onChange={(e) => onImageLabelChanged(img.id, e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: 6,
-                    border: "1px solid #ddd",
-                    borderRadius: 3,
-                    fontSize: 11,
-                  }}
-                />
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 6 }}>
+                  <input
+                    type="text"
+                    value={img.label}
+                    onChange={(e) => onImageLabelChanged(img.id, e.target.value)}
+                    style={{
+                      padding: 6,
+                      border: "1px solid #ddd",
+                      borderRadius: 3,
+                      fontSize: 11,
+                    }}
+                  />
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: "bold", cursor: "pointer", color: "#007bff" }}>
+                      <input
+                        type="checkbox"
+                        checked={img.isNbi || false}
+                        onChange={(e) => {
+                          const updated = images.map((i) =>
+                            i.id === img.id
+                              ? {
+                                  ...i,
+                                  isNbi: e.target.checked,
+                                  nbiLabel: e.target.checked ? "NBI" : undefined,
+                                }
+                              : i
+                          );
+                          onImagesUpdated(updated);
+                        }}
+                        style={{ accentColor: "#007bff", cursor: "pointer", margin: 0 }}
+                      />
+                      NBI Tag
+                    </label>
+                  </div>
+                </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
                   <label style={{ fontSize: 10 }}>Brightness</label>

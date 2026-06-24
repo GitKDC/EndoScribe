@@ -25,6 +25,7 @@ async function createWindow() {
       nodeIntegration: false,
       sandbox: false,
       enableRemoteModule: false,
+      webSecurity: false,
     },
   });
 
@@ -96,6 +97,10 @@ async function initializeApp() {
     console.log("🔵 Registering Doctor IPC handlers...");
     const doctorHandlers = require("../../packages/backend/ipc/doctorsHandlers");
     doctorHandlers.registerDoctorHandlers();
+
+    console.log("🔵 Registering Patient IPC handlers...");
+    const patientHandlers = require("../../packages/backend/ipc/patientHandlers");
+    patientHandlers.registerPatientHandlers();
 
     console.log("✅ App initialized successfully");
   } catch (error) {

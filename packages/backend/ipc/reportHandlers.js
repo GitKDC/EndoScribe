@@ -39,9 +39,9 @@ const registerReportHandlers = () => {
   });
 
   // ── Get all reports (for Reports list page) ───────────────────────────────
-  ipcMain.handle("get-all-reports", async () => {
+  ipcMain.handle("get-all-reports", async (_, filters) => {
     try {
-      const reports = await getAllReports();
+      const reports = await getAllReports(filters || {});
       return reports;
     } catch (error) {
       console.error("❌ Error fetching reports:", error);

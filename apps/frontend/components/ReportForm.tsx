@@ -46,6 +46,7 @@ interface ReportFormProps {
   selectedDoctorIds: number[];
   setSelectedDoctorIds: React.Dispatch<React.SetStateAction<number[]>>;
   onPatientNameChange: (v: string) => void;
+  onPatientIdChange?:  (id: number | null) => void;
   onPatientAgeChange:  (v: string) => void;
   onReportDateChange:  (v: string) => void;
   onReportTypeChange:  (v: string) => void;
@@ -57,7 +58,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
   patientName, patientAge, reportDate, reportType, prefix,
   sections, setSections, templates,
   selectedDoctorIds, setSelectedDoctorIds,
-  onPatientNameChange, onPatientAgeChange, onReportDateChange,
+  onPatientNameChange, onPatientIdChange, onPatientAgeChange, onReportDateChange,
   onReportTypeChange, onTemplateSelect, setPrefix,
 }) => {
   const [activeField, setActiveField] = useState<string | null>(null);
@@ -67,6 +68,11 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const [newFieldTitle, setNewFieldTitle] = useState("");
   const [doctors, setDoctors]   = useState<Doctor[]>([]);
   const [docMenuOpen, setDocMenuOpen] = useState(false);
+
+  // ── Patient Autocomplete ──
+  const [patients, setPatients] = useState<any[]>([]);
+  const [showPatientSugs, setShowPatientSugs] = useState(false);
+  const patientInputRef = useRef<HTMLDivElement>(null);
 
   // ref for the trigger element — used to measure where to place the dropdown
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -87,6 +93,17 @@ const ReportForm: React.FC<ReportFormProps> = ({
       }
     };
     loadDoctors();
+    
+    const loadPatients = async () => {
+      if (!(window as any).api) return;
+      try {
+        const data = await (window as any).api.getPatients("");
+        setPatients(data || []);
+      } catch (err) {
+        console.error("Failed to load patients:", err);
+      }
+    };
+    loadPatients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -129,6 +146,16 @@ const ReportForm: React.FC<ReportFormProps> = ({
       });
     }
   }, [docMenuOpen, doctors.length]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (patientInputRef.current && !patientInputRef.current.contains(e.target as Node)) {
+        setShowPatientSugs(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const focus = (name: string) => () => setActiveField(name);
   const blur  = () => setActiveField(null);
@@ -233,6 +260,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
         .rfmt:hover { background: #e2e8f0 !important; }
         .rrem:hover { background: #fee2e2 !important; }
         .doc-opt:hover { background: #f0fdfa !important; }
+        .pat-sug:hover { background: #f1f5f9 !important; }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
           -webkit-appearance: none;
@@ -274,9 +302,55 @@ const ReportForm: React.FC<ReportFormProps> = ({
                   </select>
                   <div style={{ position: "absolute", right: "8px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><IoIosArrowDown size={14} /></div>
                 </div>
-                <input type="text" value={patientName} onChange={e => onPatientNameChange(e.target.value)}
-                  placeholder="Full name" onFocus={focus("pn")} onBlur={blur}
-                  style={{ ...inp("pn"), flex: 1 }} />
+                <div ref={patientInputRef} style={{ position: "relative", flex: 1 }}>
+                  <input type="text" value={patientName} 
+                    onChange={e => {
+                      onPatientNameChange(e.target.value);
+                      setShowPatientSugs(true);
+                    }}
+                    onFocus={() => { focus("pn")(); setShowPatientSugs(true); }} 
+                    onBlur={blur}
+                    placeholder="Full name" 
+                    style={{ ...inp("pn"), width: "100%" }} />
+                  
+                  {/* Suggestions Dropdown */}
+                  {showPatientSugs && patientName.length > 0 && (
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+                      background: "white", border: `1.5px solid ${THEME.border}`, borderRadius: "8px",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 10000, maxHeight: "200px", overflowY: "auto"
+                    }}>
+                      {patients.filter(p => p.name.toLowerCase().includes(patientName.toLowerCase())).length === 0 ? (
+                        <div style={{ padding: "10px", fontSize: "13px", color: THEME.muted, textAlign: "center" }}>
+                          New patient will be created automatically.
+                        </div>
+                      ) : (
+                        patients.filter(p => p.name.toLowerCase().includes(patientName.toLowerCase())).map(p => (
+                          <div key={p.id} className="pat-sug"
+                            onClick={() => {
+                              onPatientNameChange(p.name);
+                              if (onPatientIdChange) onPatientIdChange(p.id);
+                              
+                              setPrefix(p.gender === "M" ? "Mr." : "Mrs.");
+                              setAge(p.age ? String(p.age) : "");
+                              setGender(p.gender || "M");
+                              onPatientAgeChange(`${p.age || ""}Yrs/${p.gender || "M"}`);
+                              
+                              setShowPatientSugs(false);
+                            }}
+                            style={{
+                              padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${THEME.border}`,
+                              display: "flex", justifyContent: "space-between", alignItems: "center"
+                            }}
+                          >
+                            <span style={{ fontSize: "13px", fontWeight: "600", color: THEME.navy }}>{p.name}</span>
+                            <span style={{ fontSize: "11px", color: THEME.muted }}>{p.age} Yrs • {p.gender}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div style={{ flex: 1 }}>
