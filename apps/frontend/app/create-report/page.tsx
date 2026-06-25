@@ -5,6 +5,7 @@ import ReportForm from "@/components/ReportForm";
 import ImageUploader from "@/components/ImageUploader";
 import ReportPreview from "@/components/ReportPreview";
 import { generatePDF, printReport, exportAsImage } from "@/utils/reportGenerator";
+import { FiPrinter, FiDownload, FiImage, FiRefreshCw, FiEdit3, FiAlertTriangle } from "react-icons/fi";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -337,7 +338,7 @@ export default function Home() {
     (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
   };
 
-  const getLabel = (state: ActionState, idle: string, loading: string, success: string) => {
+  const getLabel = (state: ActionState, idle: React.ReactNode, loading: string, success: string) => {
     if (state === "loading") return <><Spinner />{loading}</>;
     if (state === "success") return <>{"\u2713"} {success}</>;
     return <>{idle}</>;
@@ -424,7 +425,7 @@ export default function Home() {
           >
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
-              <span style={{ fontSize: "24px" }}>📝</span>
+              <FiEdit3 size={24} color="#1a3a52" />
               <h2 style={{ color: "#1a3a52", margin: 0, fontSize: "20px", fontWeight: "700", fontFamily: "'Inter', sans-serif" }}>
                 EndoScribe: Endoscopy Report Generator 
               </h2>
@@ -438,7 +439,7 @@ export default function Home() {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 fontSize: "13px", animation: "fadeIn 0.3s ease",
               }}>
-                <span>⚠️ {loadError} — using default templates.</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FiAlertTriangle /> {loadError} — using default templates.</span>
                 <button
                   onClick={() => setLoadError(null)}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#856404", padding: "0 4px" }}
@@ -495,7 +496,7 @@ export default function Home() {
                 onMouseEnter={btnHover} onMouseLeave={btnLeave}
                 style={{ ...btnBase, backgroundColor: printState === "success" ? "#157347" : "#0d6efd", opacity: printState === "loading" ? 0.75 : 1 }}
               >
-                {getLabel(printState, "🖨️ Print", "Printing…", "Printed")}
+                {getLabel(printState, <><FiPrinter style={{marginRight: 6}}/> Print</>, "Printing…", "Printed")}
               </button>
 
               <button
@@ -504,7 +505,7 @@ export default function Home() {
                 onMouseEnter={btnHover} onMouseLeave={btnLeave}
                 style={{ ...btnBase, backgroundColor: pdfState === "success" ? "#157347" : "#198754", opacity: pdfState === "loading" ? 0.75 : 1 }}
               >
-                {getLabel(pdfState, "📥 PDF", "Generating…", "Saved")}
+                {getLabel(pdfState, <><FiDownload style={{marginRight: 6}}/> PDF</>, "Generating…", "Saved")}
               </button>
 
               <button
@@ -513,7 +514,7 @@ export default function Home() {
                 onMouseEnter={btnHover} onMouseLeave={btnLeave}
                 style={{ ...btnBase, backgroundColor: "#0dcaf0", color: "#000", opacity: imgState === "loading" ? 0.75 : 1 }}
               >
-                {getLabel(imgState, "🖼️ Image", "Exporting…", "Exported")}
+                {getLabel(imgState, <><FiImage style={{marginRight: 6}}/> Image</>, "Exporting…", "Exported")}
               </button>
 
               <button
@@ -521,7 +522,7 @@ export default function Home() {
                 onMouseEnter={btnHover} onMouseLeave={btnLeave}
                 style={{ ...btnBase, backgroundColor: "#6c757d" }}
               >
-                🔄 Reset
+                <FiRefreshCw style={{marginRight: 6}}/> Reset
               </button>
             </div>
           </div>

@@ -1,21 +1,20 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
 
-// GPU & Display fixes for Linux
-app.commandLine.appendSwitch("no-sandbox");
-app.commandLine.appendSwitch("disable-gpu");
-app.commandLine.appendSwitch("disable-gpu-compositing");
-app.commandLine.appendSwitch("disable-dev-shm-usage");
-app.disableHardwareAcceleration();
+// Mac M-series: NO GPU flags needed — Apple Silicon handles this natively
+// Only add platform-specific flags when needed
+if (process.platform === "linux") {
+  app.commandLine.appendSwitch("no-sandbox");
+  app.commandLine.appendSwitch("disable-gpu-compositing");
+  app.commandLine.appendSwitch("disable-dev-shm-usage");
+  app.disableHardwareAcceleration();
+}
 
-// Import DB and handlers AFTER app is ready
 let db;
-
 let win;
 
 async function createWindow() {
   console.log("🔵 Creating Electron window...");
-
   win = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -25,108 +24,65 @@ async function createWindow() {
       nodeIntegration: false,
       sandbox: false,
       enableRemoteModule: false,
-      webSecurity: false,
     },
   });
 
-  // Open DevTools in development
   if (process.env.DEBUG) {
     win.webContents.openDevTools();
   }
 
-  win.webContents.on("did-start-loading", () => {
-    console.log("⏳ Page started loading...");
-  });
-
-  win.webContents.on("did-finish-load", () => {
-    console.log("✅ Page loaded successfully");
-  });
-
+  win.webContents.on("did-start-loading", () => console.log("⏳ Page started loading..."));
+  win.webContents.on("did-finish-load",   () => console.log("✅ Page loaded successfully"));
   win.webContents.on("did-fail-load", (event, errorCode, errorDescription) => {
-    console.error(`❌ Page failed to load (${errorCode}): ${errorDescription}`);
+    console.error(`Page failed to load (${errorCode}): ${errorDescription}`);
   });
-
-  win.webContents.on("crashed", () => {
-    console.error("❌ Renderer process crashed");
-    win.reload();
+  // crashed' is deprecated — use render-process-gone
+  win.webContents.on("render-process-gone", (event, details) => {
+    console.error("Renderer process gone:", details.reason);
+    if (details.reason !== "clean-exit") win.reload();
   });
 
   try {
-    // Try localhost first, fallback to IP
     const url = process.env.NEXT_URL || "http://localhost:3000";
-    console.log(`🔵 Loading URL: ${url}`);
+    console.log(`Loading URL: ${url}`);
     await win.loadURL(url);
-    console.log("✅ URL loaded successfully");
+    console.log("URL loaded successfully");
   } catch (err) {
-    console.error("❌ Failed to load URL:", err);
-    // Retry after 2 seconds
-    setTimeout(() => {
-      createWindow();
-    }, 2000);
+    console.error("Failed to load URL:", err);
+    setTimeout(() => createWindow(), 2000);
   }
 }
 
 async function initializeApp() {
   try {
-    // Initialize database
     console.log("🔵 Initializing database...");
-    const { app } = require("electron");
-
-    if (!app.isReady()) {
-      await app.whenReady();
-    }
-
     db = require("../../packages/backend/db/db");
 
-    // Register Report IPC handlers
-    console.log("🔵 Registering Report IPC handlers...");
-    const reportHandlers = require("../../packages/backend/ipc/reportHandlers");
-    reportHandlers.registerReportHandlers();
+    console.log("🔵 Registering IPC handlers...");
+    require("../../packages/backend/ipc/reportHandlers").registerReportHandlers();
+    require("../../packages/backend/ipc/imageHandlers").registerImageHandlers();
+    require("../../packages/backend/ipc/templateHandlers").registerTemplateHandlers();
+    require("../../packages/backend/ipc/backupHandlers").registerBackupHandlers();
+    require("../../packages/backend/ipc/doctorsHandlers").registerDoctorHandlers();
+    require("../../packages/backend/ipc/patientHandlers").registerPatientHandlers();
+    require("../../packages/backend/ipc/referralHandlers").registerReferralHandlers();
+    require("../../packages/backend/ipc/dashboardHandlers").registerDashboardHandlers();
+    require("../../packages/backend/ipc/analyticsHandlers").registerAnalyticsHandlers();
 
-    const imageHandlers = require("../../packages/backend/ipc/imageHandlers");
-    imageHandlers.registerImageHandlers();
-
-    console.log("🔵 Registering Template IPC handlers...");
-    const templateHandlers = require("../../packages/backend/ipc/templateHandlers");
-    templateHandlers.registerTemplateHandlers();
-
-    const backupHandlers = require("../../packages/backend/ipc/backupHandlers");
-    backupHandlers.registerBackupHandlers();
-
-    // 🔥 NEW: Register Doctor IPC handlers
-    console.log("🔵 Registering Doctor IPC handlers...");
-    const doctorHandlers = require("../../packages/backend/ipc/doctorsHandlers");
-    doctorHandlers.registerDoctorHandlers();
-
-    console.log("🔵 Registering Patient IPC handlers...");
-    const patientHandlers = require("../../packages/backend/ipc/patientHandlers");
-    patientHandlers.registerPatientHandlers();
-
-    console.log("🔵 Registering Referral IPC handlers...");
-    const referralHandlers = require("../../packages/backend/ipc/referralHandlers");
-    referralHandlers.registerReferralHandlers();
-
-    console.log("🔵 Registering Dashboard IPC handlers...");
-    const dashboardHandlers = require("../../packages/backend/ipc/dashboardHandlers");
-    dashboardHandlers.registerDashboardHandlers();
-
-    console.log("✅ App initialized successfully");
+    console.log("App initialized successfully");
   } catch (error) {
-    console.error("❌ Initialization error:", error);
+    console.error("Initialization error:", error);
     process.exit(1);
   }
 }
 
 app.whenReady().then(async () => {
   console.log("🚀 App is ready");
-
   await initializeApp();
   createWindow();
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
@@ -137,7 +93,6 @@ app.on("window-all-closed", () => {
   }
 });
 
-// Handle any uncaught exceptions
 process.on("uncaughtException", (error) => {
-  console.error("❌ Uncaught Exception:", error);
+  console.error("Uncaught Exception:", error);
 });

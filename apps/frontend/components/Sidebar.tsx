@@ -1,14 +1,24 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
 
+import { 
+  FiHome, 
+  FiEdit, 
+  FiUsers, 
+  FiHeart, 
+  FiFileText, 
+  FiFolder, 
+  FiActivity 
+} from "react-icons/fi";
+
 const NAV = [
-  { name: "Dashboard",   path: "/",               icon: "⊞" },
-  { name: "New Report",  path: "/create-report",  icon: "✏️" },
-  { name: "Patients",    path: "/patients",       icon: "👥" },
-  { name: "Referrals",   path: "/referrals",      icon: "🏥" },
-  { name: "Reports",     path: "/reports",         icon: "📋" },
-  { name: "Templates",   path: "/templates",       icon: "🗂️" },
-  { name: "Analytics",   path: "/analytics",       icon: "📊" },
+  { name: "Dashboard",   path: "/",               icon: <FiHome /> },
+  { name: "New Report",  path: "/create-report",  icon: <FiEdit /> },
+  { name: "Patients",    path: "/patients",       icon: <FiUsers /> },
+  { name: "Referrals",   path: "/referrals",      icon: <FiHeart /> },
+  { name: "Reports",     path: "/reports",         icon: <FiFileText /> },
+  { name: "Templates",   path: "/templates",       icon: <FiFolder /> },
+  { name: "Analytics",   path: "/analytics",       icon: <FiActivity /> },
 ];
 
 export default function Sidebar() {
@@ -61,7 +71,7 @@ export default function Sidebar() {
             background: "linear-gradient(135deg, #0d9488, #2a7a2a)",
             alignItems: "center", justifyContent: "center",
             fontSize: "20px", flexShrink: 0,
-          }}>🏥</div>
+          }}><FiHeart size={22} color="#fff" /></div>
 
           <div>
             <div style={{ fontSize: "16px", fontWeight: "700", lineHeight: 1.2, color: "#e0f2fe", letterSpacing: "0.2px" }}>

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import ReportPreview from "../../components/ReportPreview";
 import { IoMdEye, IoIosArrowDown } from "react-icons/io";
 import { SlCalender } from "react-icons/sl";
+import { FiSearch } from "react-icons/fi";
 import { MdPrint, MdPictureAsPdf, MdDownload } from "react-icons/md";
 import { generatePDF } from "../../utils/reportGenerator";
 
@@ -108,12 +109,15 @@ export default function ReportsPage() {
         display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap",
         background: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
       }}>
-        <input 
-          placeholder="Search patient..." 
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          style={{ padding: "10px 14px", border: "1px solid #ddd", borderRadius: "8px", flex: 1, minWidth: "220px", fontSize: "14px", outline: "none" }}
-        />
+        <div style={{ position: "relative", flex: 1, minWidth: "220px" }}>
+          <FiSearch style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} size={18} />
+          <input 
+            placeholder="Search patient..." 
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{ width: "100%", padding: "10px 14px 10px 40px", border: "1px solid #ddd", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+          />
+        </div>
         
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "14px", fontWeight: "600", color: "#555" }}>Date:</span>

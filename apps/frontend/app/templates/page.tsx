@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { FiSearch } from "react-icons/fi";
 
 const THEME = {
   navy:    "#1a3a52",
@@ -196,12 +197,15 @@ export default function TemplatePage() {
             display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap",
             background: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
           }}>
-            <input
-              placeholder="🔍 Search templates…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ ...inp, width: "240px" }}
-            />
+            <div style={{ position: "relative", width: "240px" }}>
+              <FiSearch style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} size={18} />
+              <input
+                placeholder="Search templates…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ ...inp, width: "100%", paddingLeft: "40px" }}
+              />
+            </div>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {["ALL", ...CATEGORIES].map(c => {
                 const active = filterCat === c;

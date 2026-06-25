@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { FiClock } from "react-icons/fi";
 
 export default function Header() {
   const [time, setTime] = useState<Date | null>(null);
@@ -37,9 +38,12 @@ export default function Header() {
             color: "#ccfbf1", // THEME.tealLight
             background: "rgba(13,148,136,0.2)",
             padding: "4px 10px",
-            borderRadius: "20px"
+            borderRadius: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px"
           }}>
-            🕒 {timeStr} | {dateStr}
+            <FiClock /> {timeStr} | {dateStr}
           </span>
         )}
       </div>

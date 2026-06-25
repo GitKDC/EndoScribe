@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { FiSearch } from "react-icons/fi";
 import { format } from "date-fns";
 import ReferralForm from "../../components/ReferralForm";
 
@@ -77,16 +78,19 @@ export default function ReferralsPage() {
         display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap",
         background: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", marginBottom: "24px"
       }}>
-        <input 
-          type="text" 
-          placeholder="🔍 Search by name, clinic, or phone..." 
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            flex: 1, minWidth: "250px", padding: "10px 14px",
-            border: "1px solid #ccc", borderRadius: "8px", fontSize: "14px", outline: "none"
-          }} 
-        />
+        <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
+          <FiSearch style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} size={18} />
+          <input 
+            type="text" 
+            placeholder="Search by name, clinic, or phone..." 
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", padding: "10px 14px 10px 40px",
+              border: "1px solid #ccc", borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box"
+            }} 
+          />
+        </div>
       </div>
 
       {/* TABLE */}

@@ -1,6 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { 
+  FiEdit, FiSave, FiFileText, FiCalendar, 
+  FiUsers, FiFolder, FiHardDrive, FiActivity,
+  FiUserPlus
+} from "react-icons/fi";
 
 const THEME = {
   navy:    "#1a3a52",
@@ -147,10 +152,10 @@ export default function Dashboard() {
   const sigCount  = templates.filter(t => t.category === "SIGMOIDOSCOPY").length;
 
   const QUICK = [
-    { label: "Upper GI Endoscopy",  cat: "UGI",          icon: "🔭", color: THEME.teal  },
-    { label: "VLS Scopy",           cat: "VLS",          icon: "🩺", color: "#7c3aed"   },
-    { label: "Sigmoidoscopy",       cat: "SIGMOIDOSCOPY",icon: "🔬", color: "#b45309"   },
-    { label: "ERCP",                cat: "ERCP",         icon: "💉", color: "#dc2626"   },
+    { label: "Upper GI Endoscopy",  cat: "UGI",          icon: <FiActivity />, color: THEME.teal  },
+    { label: "VLS Scopy",           cat: "VLS",          icon: <FiActivity />, color: "#7c3aed"   },
+    { label: "Sigmoidoscopy",       cat: "SIGMOIDOSCOPY",icon: <FiActivity />, color: "#b45309"   },
+    { label: "ERCP",                cat: "ERCP",         icon: <FiActivity />, color: "#dc2626"   },
   ];
 
   const card: React.CSSProperties = {
@@ -246,7 +251,7 @@ export default function Dashboard() {
                 boxShadow: "0 4px 14px rgba(13,148,136,0.4)",
               }}
             >
-              ✏️ New Report
+              <FiEdit /> New Report
             </button>
 
             <button
@@ -274,7 +279,7 @@ export default function Dashboard() {
                 gap: "8px",
                 boxShadow: "0 4px 14px rgba(13,148,136,0.4)",
               }}>
-              💾 Backup Now
+              <FiSave /> Backup Now
             </button>
            </div>
           </div>
@@ -285,11 +290,11 @@ export default function Dashboard() {
           {/* ── Stat cards ───────────────────────────────────── */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
             {[
-              { label: "Today's Reports",  value: stats.todayReports,       icon: "📄", color: THEME.teal },
-              { label: "This Month",       value: stats.thisMonthReports,   icon: "📅", color: "#2563eb" },
-              { label: "Total Patients",   value: stats.totalPatients,      icon: "👥", color: "#ea580c" },
-              { label: "Total Templates",  value: templates.length,         icon: "🗂️", color: "#7c3aed" },
-              { label: "Storage Used",     value: `${stats.storageUsedMB} MB`, icon: "💾", color: THEME.muted },
+              { label: "Today's Reports",  value: stats.todayReports,       icon: <FiFileText size={22} />, color: THEME.teal },
+              { label: "This Month",       value: stats.thisMonthReports,   icon: <FiCalendar size={22} />, color: "#2563eb" },
+              { label: "Total Patients",   value: stats.totalPatients,      icon: <FiUsers size={22} />, color: "#ea580c" },
+              { label: "Total Templates",  value: templates.length,         icon: <FiFolder size={22} />, color: "#7c3aed" },
+              { label: "Storage Used",     value: `${stats.storageUsedMB} MB`, icon: <FiHardDrive size={22} />, color: THEME.muted },
             ].map((s) => (
               <div key={s.label} style={{
                 ...card,
@@ -321,8 +326,8 @@ export default function Dashboard() {
           {/* ── 🔥 NEW: Doctors section ───────────────────────── */}
           <div style={{ ...card, padding: "22px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
-                🩻 Doctors
+              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy, display: "flex", alignItems: "center" }}>
+                <FiUsers style={{ marginRight: "8px" }} /> Doctors
               </h3>
               <button onClick={openAddDoctor} style={{
                 padding: "7px 16px", background: THEME.teal, color: "white",
@@ -395,8 +400,8 @@ export default function Dashboard() {
 
             {/* Quick actions */}
             <div style={{ ...card, padding: "22px" }}>
-              <h3 style={{ margin: "0 0 16px", fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
-                🚀 Quick Start
+              <h3 style={{ margin: "0 0 16px", fontSize: "15px", fontWeight: "700", color: THEME.navy, display: "flex", alignItems: "center" }}>
+                <FiActivity style={{ marginRight: "8px" }} /> Quick Start
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {QUICK.map((q) => (
@@ -443,8 +448,8 @@ export default function Dashboard() {
             {/* Template list */}
             <div style={{ ...card, padding: "22px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
-                  🗂️ Templates
+                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy, display: "flex", alignItems: "center" }}>
+                  <FiFolder style={{ marginRight: "8px" }} /> Templates
                 </h3>
                 <button
                   onClick={() => router.push("/templates")}

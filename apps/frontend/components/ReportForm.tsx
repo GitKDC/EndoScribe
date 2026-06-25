@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { SlCalender } from "react-icons/sl";
+import { FiPlus, FiX, FiKey, FiUser, FiFileText, FiActivity } from "react-icons/fi";
 
 const THEME = {
   navy:    "#1a3a52",
@@ -233,12 +234,12 @@ const ReportForm: React.FC<ReportFormProps> = ({
     letterSpacing: "0.6px",
   };
 
-  const icon = (emoji: string, bg: string) => (
+  const icon = (element: React.ReactNode, bg: string) => (
     <span style={{
       width: "22px", height: "22px", borderRadius: "6px",
       background: bg, display: "inline-flex",
-      alignItems: "center", justifyContent: "center", fontSize: "12px",
-    }}>{emoji}</span>
+      alignItems: "center", justifyContent: "center", fontSize: "14px",
+    }}>{element}</span>
   );
 
   const filteredTemplates = templates.filter(t => t.category === reportType);
@@ -313,7 +314,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
 
         {/* ── Patient Info ─────────────────────────────── */}
         <div style={card}>
-          <h4 style={cardHdr}>{icon("👤", THEME.teal + "18")} Patient Information</h4>
+          <h4 style={cardHdr}>{icon(<FiUser color={THEME.teal} />, THEME.teal + "18")} Patient Information</h4>
 
           <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
             <div style={{ flex: 2 }}>
@@ -548,7 +549,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
 
         {/* ── Report Details ────────────────────────── */}
         <div style={card}>
-          <h4 style={cardHdr}>{icon("📄", "#7c3aed18")} Report Details</h4>
+          <h4 style={cardHdr}>{icon(<FiFileText color="#7c3aed" />, "#7c3aed18")} Report Details</h4>
 
           <div style={{ marginBottom: "12px" }}>
             <label style={lbl}>Procedure Type</label>
@@ -589,7 +590,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
 
         {/* ── Clinical Findings ─────────────────────── */}
         <div style={card}>
-          <h4 style={cardHdr}>{icon("🔬", "#b4530918")} Clinical Findings</h4>
+          <h4 style={cardHdr}>{icon(<FiActivity color="#b45309" />, "#b4530918")} Clinical Findings</h4>
 
           {sections.map((section, i) => {
             if (section.isHeading) {
@@ -620,7 +621,11 @@ const ReportForm: React.FC<ReportFormProps> = ({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "5px" }}>
                   <label style={{ ...lbl, marginBottom: 0 }}>
                     {section.title}
-                    {isHL && <span style={{ color: THEME.danger, marginLeft: "6px", textTransform: "none", letterSpacing: 0, fontWeight: "600" }}> · Key</span>}
+                    {isHL && (
+                      <span style={{ color: THEME.danger, marginLeft: "8px", textTransform: "none", letterSpacing: 0, fontWeight: "500", display: "inline-flex", alignItems: "center", verticalAlign: "middle" }}>
+                        <FiKey style={{ marginRight: 4 }} /> Key
+                      </span>
+                    )}
                   </label>
 
                   <div style={{ display: "flex", gap: "4px" }}>
@@ -642,7 +647,8 @@ const ReportForm: React.FC<ReportFormProps> = ({
                         borderRadius: "5px", cursor: "pointer", fontSize: "11px",
                         fontWeight: "600", color: THEME.danger, background: "white",
                         transition: "background 0.12s", fontFamily: "inherit",
-                      }}>✕ Remove</button>
+                        display: "flex", alignItems: "center"
+                      }}><FiX style={{ marginRight: 4 }} /> Remove</button>
                     )}
                   </div>
                 </div>
@@ -671,8 +677,8 @@ const ReportForm: React.FC<ReportFormProps> = ({
             background: THEME.tealBg, borderRadius: "9px",
             border: `1.5px dashed ${THEME.teal}55`,
           }}>
-            <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: "600", color: THEME.teal, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              ➕ Add Custom Field
+            <p style={{ margin: "0 0 10px", fontSize: "11px", fontWeight: "600", color: THEME.teal, textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center" }}>
+              <FiPlus style={{ marginRight: 6 }} /> Add Custom Field
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               <input type="text" value={newFieldTitle}
