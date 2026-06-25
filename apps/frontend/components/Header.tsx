@@ -29,7 +29,7 @@ export default function Header() {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
         <span style={{ fontSize: "16px", fontWeight: "700", letterSpacing: "0.5px" }}>
-          Endoscribe
+          EndoScribe
         </span>
         {time && (
           <span style={{ 

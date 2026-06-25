@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import ReportForm from "@/components/ReportForm";
 import ImageUploader from "@/components/ImageUploader";
 import ReportPreview from "@/components/ReportPreview";
@@ -78,13 +79,16 @@ export default function Home() {
   const [loading, setLoading]       = useState(true);
   const [loadError, setLoadError]   = useState<string | null>(null);
 
+  const searchParams = useSearchParams();
+  const initType = searchParams?.get("type") || "UGI";
+
   // ── Report fields ───────────────────────────────────────────────────────────
   const [patientName, setPatientName] = useState("");
   const [patientId,   setPatientId]   = useState<number | null>(null);
   const [patientPhone, setPatientPhone] = useState("");
   const [patientAge,  setPatientAge]  = useState("");
   const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
-  const [reportType,  setReportType]  = useState("UGI");
+  const [reportType,  setReportType]  = useState(initType);
   const [doctorName,  setDoctorName]  = useState("Dr Your Name");
   const [images,        setImages]        = useState<ImageData[]>([]);
   const [prefix,        setPrefix]        = useState("Mr");

@@ -82,8 +82,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 };
 
   return (
-    <div style={{ marginBottom: 20, fontFamily: "'Inter', sans-serif" }}>
-      <h3 style={{ color: "#1a3a52", marginTop: 0, marginBottom: 12, fontSize: 14, display: "flex", alignItems: "center", fontFamily: "Inter" }}>
+    <div style={{ marginBottom: 20 }}>
+      <h3 style={{ color: "#1a3a52", marginTop: 0, marginBottom: 12, fontSize: 14, fontFamily: "'Inter', sans-serif", fontWeight: 600, display: "flex", alignItems: "center" }}>
         <FiCamera style={{ marginRight: 8 }} /> Upload Endoscopy Images ({images.length}/{maxImages})
       </h3>
 
@@ -97,7 +97,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             backgroundColor: "#f0f8ff",
             cursor: "pointer",
             marginBottom: 15,
-            fontFamily: "Inter"
+            fontFamily: "'Inter', sans-serif"
           }}
           onClick={() => fileInputRef.current?.click()}
         >
