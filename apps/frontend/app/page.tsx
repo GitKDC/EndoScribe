@@ -36,6 +36,7 @@ type Doctor = {
 export default function Dashboard() {
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [time, setTime]           = useState(new Date());
 
   const [stats, setStats] = useState({
@@ -66,6 +67,7 @@ export default function Dashboard() {
   useEffect(() => {
     if ((window as any).api) {
       (window as any).api.getTemplates().then(setTemplates).catch(console.error);
+      (window as any).api.getCategories().then(setCategories).catch(console.error);
       (window as any).api.getDashboardStats().then(setStats).catch(console.error);
       loadDoctors();
     }
@@ -151,12 +153,13 @@ export default function Dashboard() {
   const vlsCount  = templates.filter(t => t.category === "VLS").length;
   const sigCount  = templates.filter(t => t.category === "SIGMOIDOSCOPY").length;
 
-  const QUICK = [
-    { label: "Upper GI Endoscopy",  cat: "UGI",          icon: <FiActivity />, color: THEME.teal  },
-    { label: "VLS Scopy",           cat: "VLS",          icon: <FiActivity />, color: "#7c3aed"   },
-    { label: "Sigmoidoscopy",       cat: "SIGMOIDOSCOPY",icon: <FiActivity />, color: "#b45309"   },
-    { label: "ERCP",                cat: "ERCP",         icon: <FiActivity />, color: "#dc2626"   },
-  ];
+  // Quick links dynamically built from first 4 categories
+  const QUICK = categories.slice(0, 4).map(c => ({
+    label: c.name + " Report",
+    cat: c.name,
+    icon: <FiActivity />,
+    color: c.color_fg || THEME.teal
+  }));
 
   const card: React.CSSProperties = {
     background: THEME.white,

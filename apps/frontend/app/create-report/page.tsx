@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ReportForm from "@/components/ReportForm";
 import ImageUploader from "@/components/ImageUploader";
@@ -73,9 +73,10 @@ const FALLBACK_TEMPLATES: Template[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 // HOME
 // ─────────────────────────────────────────────────────────────────────────────
-export default function Home() {
-  // ── Template loading ────────────────────────────────────────────────────────
+function CreateReportInner() {
+  // ── Template & Category loading ────────────────────────────────────────────────────────
   const [templates, setTemplates]   = useState<Template[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading]       = useState(true);
   const [loadError, setLoadError]   = useState<string | null>(null);
 
@@ -135,9 +136,19 @@ export default function Home() {
           setTemplates(FALLBACK_TEMPLATES);
           return;
         }
+        
+        const cats = await (window as any).api.getCategories();
+        setCategories(cats || []);
+        
         const data = await (window as any).api.getTemplates();
         if (!data || data.length === 0) throw new Error("No templates found");
         setTemplates(data);
+        
+        // Auto-fill sections for initType
+        const cat = cats?.find((c: any) => c.name === initType);
+        if (cat) {
+          setSections([...cat.default_sections]);
+        }
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : "Failed to load templates");
         setTemplates(FALLBACK_TEMPLATES); // always fall back so UI isn't blocked
@@ -162,10 +173,15 @@ export default function Home() {
     loadDoctors();
   }, []);
 
-  // ── Report type change — clears sections so old content doesn't bleed across types
+  // ── Report type change — auto-fills with category default sections
   const handleReportTypeChange = (val: string) => {
     setReportType(val);
-    setSections([]);
+    const cat = categories.find(c => c.name === val);
+    if (cat) {
+      setSections([...cat.default_sections]);
+    } else {
+      setSections([]);
+    }
   };
 
   // ── Template selection ───────────────────────────────────────────────────────
@@ -203,7 +219,11 @@ export default function Home() {
     setPatientAge("");
     setReportDate(getCurrentDateForInput());
     setReportType("UGI");
-    setSections([]);
+    
+    // Auto fill UGI sections on reset if available
+    const ugiCat = categories.find(c => c.name === "UGI");
+    setSections(ugiCat ? [...ugiCat.default_sections] : []);
+    
     setImages([]);
     setReportNumber(null);
     // Reset doctor selection back to defaults
@@ -465,7 +485,10 @@ export default function Home() {
               sections={sections}
               setSections={setSections}
               selectedDoctorIds={selectedDoctorIds}
-              setSelectedDoctorIds={setSelectedDoctorIds}
+              onDoctorSelectionChange={setSelectedDoctorIds}
+              doctors={doctors}
+              categories={categories}
+              onDoctorsChange={setDoctors}
               onPatientNameChange={(v) => { setPatientName(v); setPatientId(null); }}
               onPatientPhoneChange={setPatientPhone}
               onPatientIdChange={setPatientId}
@@ -573,6 +596,14 @@ export default function Home() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateReportInner />
+    </Suspense>
   );
 }
 

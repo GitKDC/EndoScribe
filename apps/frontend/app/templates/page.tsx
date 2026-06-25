@@ -17,40 +17,31 @@ const THEME = {
 
 type Section = { title: string; content: string; highlight?: boolean; isHeading?: boolean };
 type Template = { id: number; name: string; category: string; sections: Section[] };
-
-const CATEGORIES = ["UGI", "VLS", "SIGMOIDOSCOPY", "COLONOSCOPY", "ERCP", "ENTEROSCOPY"];
-
-const catColor = (cat: string) => {
-  const m: Record<string, { bg: string; fg: string }> = {
-    UGI:          { bg: "#ccfbf1", fg: "#0d9488" },
-    VLS:          { bg: "#ede9fe", fg: "#7c3aed" },
-    SIGMOIDOSCOPY:{ bg: "#fef3c7", fg: "#b45309" },
-    COLONOSCOPY:  { bg: "#dbeafe", fg: "#2563eb" },
-    ERCP:         { bg: "#fee2e2", fg: "#dc2626" },
-    ENTEROSCOPY:  { bg: "#fce7f3", fg: "#be185d" },
-  };
-  return m[cat] || { bg: "#f1f5f9", fg: "#475569" };
-};
+type Category = { id: number; name: string; color_bg: string; color_fg: string; default_sections: Section[] };
 
 export default function TemplatePage() {
   const [templates, setTemplates]   = useState<Template[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch]         = useState("");
   const [filterCat, setFilterCat]   = useState("ALL");
   const [showModal, setShowModal]   = useState(false);
+  const [showCatModal, setShowCatModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Template | null>(null);
+  const [editCatTarget, setEditCatTarget] = useState<Category | null>(null);
   const [delConfirm, setDelConfirm] = useState<number | null>(null);
+  const [delCatConfirm, setDelCatConfirm] = useState<number | null>(null);
   const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null);
 
-  // ── form state ────────────────────────────────────────────
+  // ── Template form state ───────────────────────────────────
   const [fName, setFName]       = useState("");
-  const [fCat, setFCat]         = useState("UGI");
-  const [fSections, setFSections] = useState<Section[]>([
-    { title: "Esophagus",  content: "" },
-    { title: "Stomach",    content: "" },
-    { title: "Duodenal Cap", content: "" },
-    { title: "IInd Part of Duodenum", content: "" },
-    { title: "Impression", content: "", highlight: true },
-  ]);
+  const [fCat, setFCat]         = useState("");
+  const [fSections, setFSections] = useState<Section[]>([]);
+
+  // ── Category form state ───────────────────────────────────
+  const [cName, setCName]       = useState("");
+  const [cColorBg, setCColorBg] = useState("#f1f5f9");
+  const [cColorFg, setCColorFg] = useState("#475569");
+  const [cSections, setCSections] = useState<Section[]>([]);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -59,23 +50,27 @@ export default function TemplatePage() {
 
   const load = async () => {
     if (!(window as any).api) return;
+    const cats = await (window as any).api.getCategories();
+    setCategories(cats);
+    if (cats.length > 0 && !fCat) setFCat(cats[0].name);
+
     const data = await (window as any).api.getTemplates();
     setTemplates(data);
   };
 
   useEffect(() => { load(); }, []);
 
-  // ── Open modal ────────────────────────────────────────────
+  // ── Open Modals ───────────────────────────────────────────
   const openCreate = () => {
     setEditTarget(null);
-    setFName(""); setFCat("UGI");
-    setFSections([
-      { title: "Esophagus",  content: "" },
-      { title: "Stomach",    content: "" },
-      { title: "Duodenal Cap", content: "" },
-      { title: "IInd Part of Duodenum", content: "" },
-      { title: "Impression", content: "", highlight: true },
-    ]);
+    setFName(""); 
+    if (categories.length > 0) {
+      setFCat(categories[0].name);
+      setFSections([...categories[0].default_sections]);
+    } else {
+      setFCat("");
+      setFSections([{ title: "Impression", content: "", highlight: true }]);
+    }
     setShowModal(true);
   };
 
@@ -86,21 +81,57 @@ export default function TemplatePage() {
     setShowModal(true);
   };
 
-  // ── Section helpers ───────────────────────────────────────
-  const updateSectionTitle   = (i: number, v: string) => setFSections(p => p.map((s, idx) => idx === i ? { ...s, title: v } : s));
-  const updateSectionContent = (i: number, v: string) => setFSections(p => p.map((s, idx) => idx === i ? { ...s, content: v } : s));
-  const toggleHighlight      = (i: number)            => setFSections(p => p.map((s, idx) => idx === i ? { ...s, highlight: !s.highlight } : s));
-  const removeSection        = (i: number)            => setFSections(p => p.filter((_, idx) => idx !== i));
-  const addSection           = ()                     => setFSections(p => [...p, { title: "", content: "" }]);
-  const moveSection          = (i: number, dir: -1 | 1) => {
-    const copy = [...fSections];
-    const to = i + dir;
-    if (to < 0 || to >= copy.length) return;
-    [copy[i], copy[to]] = [copy[to], copy[i]];
-    setFSections(copy);
+  const openCreateCategory = () => {
+    setEditCatTarget(null);
+    setCName("");
+    setCColorBg("#f1f5f9");
+    setCColorFg("#475569");
+    setCSections([{ title: "Impression", content: "", highlight: true }]);
+    setShowCatModal(true);
   };
 
-  // ── Save ──────────────────────────────────────────────────
+  const openEditCategory = (c: Category) => {
+    setEditCatTarget(c);
+    setCName(c.name);
+    setCColorBg(c.color_bg);
+    setCColorFg(c.color_fg);
+    setCSections(c.default_sections.map(s => ({ ...s })));
+    setShowCatModal(true);
+  };
+
+  // ── Section helpers ───────────────────────────────────────
+  const updateSectionTitle   = (i: number, v: string, isCat = false) => {
+    const setter = isCat ? setCSections : setFSections;
+    setter(p => p.map((s, idx) => idx === i ? { ...s, title: v } : s));
+  };
+  const updateSectionContent = (i: number, v: string, isCat = false) => {
+    const setter = isCat ? setCSections : setFSections;
+    setter(p => p.map((s, idx) => idx === i ? { ...s, content: v } : s));
+  };
+  const toggleHighlight      = (i: number, isCat = false) => {
+    const setter = isCat ? setCSections : setFSections;
+    setter(p => p.map((s, idx) => idx === i ? { ...s, highlight: !s.highlight } : s));
+  };
+  const removeSection        = (i: number, isCat = false) => {
+    const setter = isCat ? setCSections : setFSections;
+    setter(p => p.filter((_, idx) => idx !== i));
+  };
+  const addSection           = (isCat = false) => {
+    const setter = isCat ? setCSections : setFSections;
+    setter(p => [...p, { title: "", content: "" }]);
+  };
+  const moveSection          = (i: number, dir: -1 | 1, isCat = false) => {
+    const setter = isCat ? setCSections : setFSections;
+    setter(p => {
+      const copy = [...p];
+      const to = i + dir;
+      if (to < 0 || to >= copy.length) return copy;
+      [copy[i], copy[to]] = [copy[to], copy[i]];
+      return copy;
+    });
+  };
+
+  // ── Save Template ──────────────────────────────────────────
   const save = async () => {
     if (!fName.trim()) return showToast("Template name is required", false);
     const payload = { name: fName.trim(), category: fCat, sections: fSections };
@@ -119,11 +150,39 @@ export default function TemplatePage() {
     }
   };
 
+  // ── Save Category ──────────────────────────────────────────
+  const saveCategory = async () => {
+    if (!cName.trim()) return showToast("Category name is required", false);
+    const payload = { name: cName.trim(), color_bg: cColorBg, color_fg: cColorFg, default_sections: cSections };
+    try {
+      if (editCatTarget) {
+        await (window as any).api.updateCategory(editCatTarget.id, payload);
+        showToast("Category updated ✓");
+      } else {
+        await (window as any).api.createCategory(payload);
+        showToast("Category created ✓");
+      }
+      setShowCatModal(false);
+      load();
+    } catch (err) {
+      showToast("Save failed", false);
+    }
+  };
+
   const confirmDelete = async (id: number) => {
     try {
       await (window as any).api.deleteTemplate(id);
       setDelConfirm(null);
       showToast("Template deleted");
+      load();
+    } catch { showToast("Delete failed", false); }
+  };
+
+  const confirmDeleteCat = async (id: number) => {
+    try {
+      await (window as any).api.deleteCategory(id);
+      setDelCatConfirm(null);
+      showToast("Category deleted");
       load();
     } catch { showToast("Delete failed", false); }
   };
@@ -137,6 +196,11 @@ export default function TemplatePage() {
     padding: "9px 12px", border: `1.5px solid ${THEME.border}`,
     borderRadius: "7px", fontSize: "13px", fontFamily: "inherit",
     outline: "none", width: "100%", boxSizing: "border-box", background: THEME.white,
+  };
+
+  const getCatColor = (catName: string) => {
+    const c = categories.find(c => c.name === catName);
+    return c ? { bg: c.color_bg, fg: c.color_fg } : { bg: "#f1f5f9", fg: "#475569" };
   };
 
   return (
@@ -173,21 +237,31 @@ export default function TemplatePage() {
           <div>
             <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", margin: 0 }}>Template Manager</h2>
             <p style={{ margin: "4px 0 0", fontSize: "14px", color: THEME.muted, fontWeight: "500" }}>
-              {templates.length} templates across {CATEGORIES.length} procedure types
+              {templates.length} templates across {categories.length} procedure types
             </p>
           </div>
-          <button onClick={openCreate} style={{
-            padding: "10px 22px", background: THEME.teal, color: "white",
-            border: "none", borderRadius: "8px", fontSize: "14px",
-            fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
-            boxShadow: "0 4px 12px rgba(13,148,136,0.35)",
-            transition: "transform 0.1s"
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-          >
-            + New Template
-          </button>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button onClick={openCreateCategory} style={{
+              padding: "10px 22px", background: "white", color: THEME.navy,
+              border: `1.5px solid ${THEME.border}`, borderRadius: "8px", fontSize: "14px",
+              fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.1s"
+            }}>
+              ⚙️ Manage Categories
+            </button>
+            <button onClick={openCreate} style={{
+              padding: "10px 22px", background: THEME.teal, color: "white",
+              border: "none", borderRadius: "8px", fontSize: "14px",
+              fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "0 4px 12px rgba(13,148,136,0.35)",
+              transition: "transform 0.1s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            >
+              + New Template
+            </button>
+          </div>
         </div>
 
         <div style={{ padding: "10px 32px 24px 32px", display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -207,9 +281,9 @@ export default function TemplatePage() {
               />
             </div>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-              {["ALL", ...CATEGORIES].map(c => {
+              {["ALL", ...categories.map(c => c.name)].map(c => {
                 const active = filterCat === c;
-                const cc = catColor(c);
+                const cc = getCatColor(c);
                 return (
                   <button key={c} onClick={() => setFilterCat(c)} style={{
                     padding: "6px 14px", borderRadius: "20px", fontSize: "12px",
@@ -238,7 +312,7 @@ export default function TemplatePage() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
               {filtered.map(t => {
-                const cc = catColor(t.category);
+                const cc = getCatColor(t.category);
                 return (
                   <div key={t.id} className="tpl-card" style={{
                     background: THEME.white, borderRadius: "12px",
@@ -285,7 +359,7 @@ export default function TemplatePage() {
         </div>
       </div>
 
-      {/* ── Delete confirm ─────────────────────────────────── */}
+      {/* ── Delete confirm (Template) ─────────────────────────── */}
       {delConfirm !== null && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
@@ -317,7 +391,39 @@ export default function TemplatePage() {
         </div>
       )}
 
-      {/* ── Create / Edit Modal ────────────────────────────── */}
+      {/* ── Delete confirm (Category) ─────────────────────────── */}
+      {delCatConfirm !== null && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+          zIndex: 1010, display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: THEME.white, borderRadius: "14px", padding: "28px 32px",
+            fontFamily: "Inter, sans-serif", maxWidth: "380px", width: "90%",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          }}>
+            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px" }}>🗑️</div>
+            <h3 style={{ margin: "0 0 8px", textAlign: "center", color: THEME.text }}>Delete Category?</h3>
+            <p style={{ margin: "0 0 20px", textAlign: "center", color: THEME.muted, fontSize: "13px" }}>
+              This cannot be undone. Templates using this category might lose their grouping.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setDelCatConfirm(null)} style={{
+                flex: 1, padding: "10px", border: `1.5px solid ${THEME.border}`,
+                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                fontSize: "14px", fontWeight: "600", background: "white", color: THEME.text,
+              }}>Cancel</button>
+              <button onClick={() => confirmDeleteCat(delCatConfirm)} style={{
+                flex: 1, padding: "10px", border: "none",
+                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                fontSize: "14px", fontWeight: "600", background: THEME.danger, color: "white",
+              }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create / Edit Template Modal ────────────────────────────── */}
       {showModal && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -331,7 +437,6 @@ export default function TemplatePage() {
             fontFamily: "Inter, sans-serif",
             marginTop: "auto", marginBottom: "auto",
           }}>
-            {/* Modal header */}
             <div style={{
               background: THEME.white,
               color: THEME.navy, padding: "20px 24px",
@@ -350,8 +455,6 @@ export default function TemplatePage() {
             </div>
 
             <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
-
-              {/* Name + Category */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "12px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: THEME.muted, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -368,19 +471,26 @@ export default function TemplatePage() {
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: THEME.muted, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                     Category
                   </label>
-                  <select value={fCat} onChange={e => setFCat(e.target.value)} style={{ ...inp, width: "160px" }}>
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  <select 
+                    value={fCat} 
+                    onChange={e => {
+                      setFCat(e.target.value);
+                      const c = categories.find(x => x.name === e.target.value);
+                      if (c && !editTarget) setFSections([...c.default_sections]); // Auto-fill default sections if new
+                    }} 
+                    style={{ ...inp, width: "160px" }}
+                  >
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Sections */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
                   <label style={{ fontSize: "12px", fontWeight: "600", color: THEME.muted, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                     Sections
                   </label>
-                  <button onClick={addSection} style={{
+                  <button onClick={() => addSection(false)} style={{
                     fontSize: "12px", color: THEME.teal, background: THEME.tealBg,
                     border: "none", borderRadius: "6px", cursor: "pointer",
                     padding: "4px 12px", fontWeight: "600", fontFamily: "inherit",
@@ -396,21 +506,20 @@ export default function TemplatePage() {
                       background: s.highlight ? "#fff7f7" : "#fafafa",
                     }}>
                       <div style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
-                        {/* move buttons */}
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <button onClick={() => moveSection(i, -1)} disabled={i === 0}
+                          <button onClick={() => moveSection(i, -1, false)} disabled={i === 0}
                             style={{ padding: "1px 5px", fontSize: "10px", cursor: "pointer", border: `1px solid ${THEME.border}`, borderRadius: "3px", background: "white", color: THEME.muted, opacity: i === 0 ? 0.3 : 1 }}>▲</button>
-                          <button onClick={() => moveSection(i, 1)} disabled={i === fSections.length - 1}
+                          <button onClick={() => moveSection(i, 1, false)} disabled={i === fSections.length - 1}
                             style={{ padding: "1px 5px", fontSize: "10px", cursor: "pointer", border: `1px solid ${THEME.border}`, borderRadius: "3px", background: "white", color: THEME.muted, opacity: i === fSections.length - 1 ? 0.3 : 1 }}>▼</button>
                         </div>
                         <input
                           value={s.title}
-                          onChange={e => updateSectionTitle(i, e.target.value)}
+                          onChange={e => updateSectionTitle(i, e.target.value, false)}
                           placeholder="Field name"
                           style={{ ...inp, flex: 1, fontWeight: "600" }}
                         />
                         <button
-                          onClick={() => toggleHighlight(i)}
+                          onClick={() => toggleHighlight(i, false)}
                           title="Toggle important / Impression"
                           style={{
                             padding: "5px 10px", border: `1.5px solid ${s.highlight ? "#fca5a5" : THEME.border}`,
@@ -422,7 +531,7 @@ export default function TemplatePage() {
                         >
                           {s.highlight ? "★ Key" : "☆ Key"}
                         </button>
-                        <button onClick={() => removeSection(i)} style={{
+                        <button onClick={() => removeSection(i, false)} style={{
                           padding: "5px 9px", border: `1px solid #fecaca`,
                           borderRadius: "6px", cursor: "pointer", background: THEME.dangerBg,
                           color: THEME.danger, fontSize: "13px",
@@ -430,7 +539,7 @@ export default function TemplatePage() {
                       </div>
                       <textarea
                         value={s.content}
-                        onChange={e => updateSectionContent(i, e.target.value)}
+                        onChange={e => updateSectionContent(i, e.target.value, false)}
                         placeholder="Default content (leave empty if doctor fills it each time)"
                         rows={2}
                         style={{ ...inp, resize: "vertical", lineHeight: 1.5 }}
@@ -440,7 +549,6 @@ export default function TemplatePage() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", paddingTop: "4px" }}>
                 <button onClick={() => setShowModal(false)} style={{
                   padding: "10px 22px", border: `1.5px solid ${THEME.border}`,
@@ -458,6 +566,141 @@ export default function TemplatePage() {
                 </button>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Manage Categories Modal ────────────────────────────── */}
+      {showCatModal && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+          zIndex: 999, display: "flex", alignItems: "flex-start",
+          justifyContent: "center", overflowY: "auto", padding: "24px",
+        }}>
+          <div style={{
+            background: THEME.white, borderRadius: "16px",
+            width: "100%", maxWidth: "800px",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+            fontFamily: "Inter, sans-serif",
+            marginTop: "auto", marginBottom: "auto",
+            display: "flex",
+            maxHeight: "85vh",
+          }}>
+            {/* Left side: List of Categories */}
+            <div style={{ width: "240px", borderRight: `1px solid ${THEME.border}`, display: "flex", flexDirection: "column" }}>
+              <div style={{ padding: "20px", borderBottom: `1px solid ${THEME.border}`, background: "#fafafa", borderRadius: "16px 0 0 0" }}>
+                <h3 style={{ margin: 0, fontSize: "15px", color: THEME.navy }}>Procedure Categories</h3>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
+                {categories.map(c => (
+                  <div key={c.id} style={{
+                    padding: "10px 12px", borderRadius: "8px", marginBottom: "6px",
+                    cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
+                    background: editCatTarget?.id === c.id ? "#f1f5f9" : "transparent"
+                  }} onClick={() => openEditCategory(c)}>
+                    <span style={{ fontSize: "13px", fontWeight: "600", color: THEME.text }}>{c.name}</span>
+                    {editCatTarget?.id === c.id && <span style={{ color: THEME.teal, fontSize: "16px" }}>→</span>}
+                  </div>
+                ))}
+                <button onClick={() => {
+                  setEditCatTarget(null);
+                  setCName(""); setCColorBg("#f1f5f9"); setCColorFg("#475569"); setCSections([{ title: "Impression", content: "", highlight: true }]);
+                }} style={{
+                  width: "100%", padding: "10px", marginTop: "10px", border: `1px dashed ${THEME.border}`,
+                  borderRadius: "8px", background: "transparent", color: THEME.teal, fontWeight: "600", cursor: "pointer", fontSize: "13px"
+                }}>+ Add New Category</button>
+              </div>
+            </div>
+
+            {/* Right side: Editor */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <div style={{
+                padding: "20px 24px", borderBottom: `1px solid ${THEME.border}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <h2 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: THEME.navy }}>
+                  {editCatTarget ? "✏️ Edit Category" : "➕ New Category"}
+                </h2>
+                <button onClick={() => setShowCatModal(false)} style={{
+                  background: "transparent", border: "none", color: THEME.muted, cursor: "pointer", fontSize: "22px"
+                }}>×</button>
+              </div>
+
+              <div style={{ padding: "24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", flex: 1 }}>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px", gap: "12px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: THEME.muted, marginBottom: "6px" }}>Category Name (e.g. COLONOSCOPY)</label>
+                    <input value={cName} onChange={e => setCName(e.target.value.toUpperCase())} placeholder="Category Name" style={inp} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: THEME.muted, marginBottom: "6px" }}>Bg Color</label>
+                    <input type="color" value={cColorBg} onChange={e => setCColorBg(e.target.value)} style={{ ...inp, padding: "2px", height: "35px", cursor: "pointer" }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: THEME.muted, marginBottom: "6px" }}>Text Color</label>
+                    <input type="color" value={cColorFg} onChange={e => setCColorFg(e.target.value)} style={{ ...inp, padding: "2px", height: "35px", cursor: "pointer" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: THEME.muted }}>DEFAULT SECTIONS</label>
+                    <button onClick={() => addSection(true)} style={{
+                      fontSize: "12px", color: THEME.teal, background: THEME.tealBg,
+                      border: "none", borderRadius: "6px", cursor: "pointer", padding: "4px 12px", fontWeight: "600"
+                    }}>+ Add Section</button>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {cSections.map((s, i) => (
+                      <div key={i} style={{
+                        border: `1.5px solid ${THEME.border}`, borderRadius: "10px", padding: "12px", background: "#fafafa",
+                      }}>
+                        <div style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <button onClick={() => moveSection(i, -1, true)} disabled={i === 0}
+                              style={{ padding: "1px 5px", fontSize: "10px", cursor: "pointer", border: `1px solid ${THEME.border}`, borderRadius: "3px", background: "white", color: THEME.muted, opacity: i === 0 ? 0.3 : 1 }}>▲</button>
+                            <button onClick={() => moveSection(i, 1, true)} disabled={i === cSections.length - 1}
+                              style={{ padding: "1px 5px", fontSize: "10px", cursor: "pointer", border: `1px solid ${THEME.border}`, borderRadius: "3px", background: "white", color: THEME.muted, opacity: i === cSections.length - 1 ? 0.3 : 1 }}>▼</button>
+                          </div>
+                          <input value={s.title} onChange={e => updateSectionTitle(i, e.target.value, true)} placeholder="Field name" style={{ ...inp, flex: 1, fontWeight: "600" }} />
+                          <button onClick={() => toggleHighlight(i, true)} title="Toggle important / Impression"
+                            style={{
+                              padding: "5px 10px", border: `1.5px solid ${s.highlight ? "#fca5a5" : THEME.border}`,
+                              borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "600",
+                              background: s.highlight ? "#fee2e2" : "white", color: s.highlight ? THEME.danger : THEME.muted,
+                            }}>
+                            {s.highlight ? "★ Key" : "☆ Key"}
+                          </button>
+                          <button onClick={() => removeSection(i, true)} style={{
+                            padding: "5px 9px", border: `1px solid #fecaca`, borderRadius: "6px", cursor: "pointer", background: THEME.dangerBg, color: THEME.danger, fontSize: "13px",
+                          }}>✕</button>
+                        </div>
+                        <textarea value={s.content} onChange={e => updateSectionContent(i, e.target.value, true)} placeholder="Default content" rows={1} style={{ ...inp, resize: "vertical" }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+              
+              <div style={{ padding: "16px 24px", borderTop: `1px solid ${THEME.border}`, display: "flex", justifyContent: "space-between", background: "#fafafa", borderRadius: "0 0 16px 0" }}>
+                {editCatTarget ? (
+                  <button onClick={() => setDelCatConfirm(editCatTarget.id)} style={{
+                    padding: "10px 16px", border: "1px solid #fecaca", borderRadius: "8px", background: THEME.dangerBg, color: THEME.danger, fontWeight: "600", cursor: "pointer"
+                  }}>Delete</button>
+                ) : <div />}
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button onClick={() => setShowCatModal(false)} style={{
+                    padding: "10px 22px", border: `1.5px solid ${THEME.border}`, borderRadius: "8px", background: "white", color: THEME.text, fontWeight: "600", cursor: "pointer"
+                  }}>Cancel</button>
+                  <button onClick={saveCategory} style={{
+                    padding: "10px 28px", border: "none", borderRadius: "8px", background: THEME.teal, color: "white", fontWeight: "600", cursor: "pointer", boxShadow: "0 4px 12px rgba(13,148,136,0.3)"
+                  }}>Save Category</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

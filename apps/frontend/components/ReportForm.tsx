@@ -45,8 +45,11 @@ interface ReportFormProps {
   sections: Section[];
   setSections: React.Dispatch<React.SetStateAction<Section[]>>;
   templates: { id: number; name: string; category: string; sections: Section[] }[];
+  doctors: Doctor[];
+  categories: any[];
+  onDoctorsChange: (docs: Doctor[]) => void;
   selectedDoctorIds: number[];
-  setSelectedDoctorIds: React.Dispatch<React.SetStateAction<number[]>>;
+  onDoctorSelectionChange: (ids: number[]) => void;
   onPatientNameChange: (v: string) => void;
   onPatientPhoneChange: (v: string) => void;
   onPatientIdChange?:  (id: number | null) => void;
@@ -62,9 +65,10 @@ interface ReportFormProps {
 
 const ReportForm: React.FC<ReportFormProps> = ({
   patientName, patientPhone, patientAge, reportDate, reportType, prefix,
-  doctorName, sections, setSections, templates, selectedDoctorIds, setSelectedDoctorIds,
+  doctorName, sections, setSections, templates, onReportTypeChange,
+  doctors, categories, onDoctorsChange, selectedDoctorIds, onDoctorSelectionChange,
   onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange,
-  onReportDateChange, onReportTypeChange, onTemplateSelect, setPrefix,
+  onReportDateChange, onTemplateSelect, setPrefix,
   referralName, onReferralNameChange, onReferralIdChange
 }) => {
   const [activeField, setActiveField] = useState<string | null>(null);
@@ -72,7 +76,6 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const [gender, setGender] = useState("M");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [newFieldTitle, setNewFieldTitle] = useState("");
-  const [doctors, setDoctors]   = useState<Doctor[]>([]);
   const [docMenuOpen, setDocMenuOpen] = useState(false);
 
   // ── Patient Autocomplete ──
@@ -90,21 +93,6 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
-    const loadDoctors = async () => {
-      if (!(window as any).api) return;
-      try {
-        const data = await (window as any).api.getDoctors();
-        setDoctors(data || []);
-        if (selectedDoctorIds.length === 0) {
-          const defaults = (data || []).filter((d: Doctor) => d.is_default).map((d: Doctor) => d.id);
-          if (defaults.length) setSelectedDoctorIds(defaults);
-        }
-      } catch (err) {
-        console.error("Failed to load doctors:", err);
-      }
-    };
-    loadDoctors();
-    
     const loadPatients = async () => {
       if (!(window as any).api) return;
       try {
@@ -270,8 +258,8 @@ const ReportForm: React.FC<ReportFormProps> = ({
   };
 
   const toggleDoctor = (id: number) => {
-    setSelectedDoctorIds(prev =>
-      prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
+    onDoctorSelectionChange(
+      selectedDoctorIds.includes(id) ? selectedDoctorIds.filter(d => d !== id) : [...selectedDoctorIds, id]
     );
   };
 
@@ -557,12 +545,9 @@ const ReportForm: React.FC<ReportFormProps> = ({
               <select value={reportType}
                 onChange={e => { onReportTypeChange(e.target.value); setSelectedTemplateId(""); }}
                 onFocus={focus("rt")} onBlur={blur} style={{ ...inp("rt"), paddingRight: "32px", cursor: "pointer" }}>
-                <option value="UGI">UGI (Upper GI Endoscopy)</option>
-                <option value="COLONOSCOPY">Colonoscopy</option>
-                <option value="SIGMOIDOSCOPY">Sigmoidoscopy</option>
-                <option value="ERCP">ERCP</option>
-                <option value="ENTEROSCOPY">Enteroscopy</option>
-                <option value="VLS">VLS Scopy</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
               </select>
               <div style={{ position: "absolute", right: "12px", pointerEvents: "none", color: THEME.teal, display: "flex" }}><IoIosArrowDown size={16} /></div>
             </div>

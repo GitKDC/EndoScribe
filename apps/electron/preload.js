@@ -10,6 +10,12 @@ contextBridge.exposeInMainWorld("api", {
   updateTemplate: async (id, d)  => ipcRenderer.invoke("update-template", id, d),
   deleteTemplate: async (id)     => ipcRenderer.invoke("delete-template", id),
 
+  // ─── CATEGORY APIs ──────────────────────────────────────────────────────
+  getCategories:   async ()      => ipcRenderer.invoke("get-categories"),
+  createCategory:  async (data)  => ipcRenderer.invoke("create-category", data),
+  updateCategory:  async (id, d) => ipcRenderer.invoke("update-category", id, d),
+  deleteCategory:  async (id)    => ipcRenderer.invoke("delete-category", id),
+
   // ─── DOCTOR APIs ────────────────────────────────────────────────────────
   getDoctors:   async ()       => ipcRenderer.invoke("get-doctors"),
   getDoctor:    async (id)     => ipcRenderer.invoke("get-doctor", id),

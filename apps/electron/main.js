@@ -68,6 +68,7 @@ async function initializeApp() {
     require("../../packages/backend/ipc/referralHandlers").registerReferralHandlers();
     require("../../packages/backend/ipc/dashboardHandlers").registerDashboardHandlers();
     require("../../packages/backend/ipc/analyticsHandlers").registerAnalyticsHandlers();
+    require("../../packages/backend/ipc/categoryHandlers").registerCategoryHandlers();
 
     console.log("App initialized successfully");
   } catch (error) {
