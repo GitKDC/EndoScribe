@@ -102,6 +102,10 @@ async function initializeApp() {
     const patientHandlers = require("../../packages/backend/ipc/patientHandlers");
     patientHandlers.registerPatientHandlers();
 
+    console.log("🔵 Registering Referral IPC handlers...");
+    const referralHandlers = require("../../packages/backend/ipc/referralHandlers");
+    referralHandlers.registerReferralHandlers();
+
     console.log("✅ App initialized successfully");
   } catch (error) {
     console.error("❌ Initialization error:", error);

@@ -50,6 +50,16 @@ CREATE TABLE IF NOT EXISTS doctors (
 );
 
 -- Settings: key-value store for app config
+CREATE TABLE IF NOT EXISTS referral_doctors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT,
+  clinic_name TEXT,
+  city TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT
@@ -63,3 +73,4 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_backup_enabled', '1');
 -- Add new columns to existing reports table if upgrading
 -- (ALTER TABLE fails silently in older SQLite if column exists)
 ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id);
+ALTER TABLE reports ADD COLUMN referral_doctor_id INTEGER REFERENCES referral_doctors(id);

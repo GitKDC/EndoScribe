@@ -23,6 +23,13 @@ contextBridge.exposeInMainWorld("api", {
   updatePatient: async (id, d)  => ipcRenderer.invoke("update-patient", { id, ...d }),
   deletePatient: async (id)     => ipcRenderer.invoke("delete-patient", id),
 
+  // ─── REFERRAL APIs ────────────────────────────────────────────────────────
+  getReferrals:   async (filters) => ipcRenderer.invoke("get-referrals", filters),
+  getReferral:    async (id)     => ipcRenderer.invoke("get-referral", id),
+  createReferral: async (data)   => ipcRenderer.invoke("create-referral", data),
+  updateReferral: async (id, d)  => ipcRenderer.invoke("update-referral", { id, ...d }),
+  deleteReferral: async (id)     => ipcRenderer.invoke("delete-referral", id),
+
   // ─── REPORT APIs ────────────────────────────────────────────────────────
   // Generate (returns sections for live preview — does NOT save to DB)
   generateReport: async (data) => ipcRenderer.invoke("generate-report", data),

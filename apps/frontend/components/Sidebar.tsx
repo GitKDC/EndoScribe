@@ -5,6 +5,7 @@ const NAV = [
   { name: "Dashboard",   path: "/",               icon: "⊞" },
   { name: "New Report",  path: "/create-report",  icon: "✏️" },
   { name: "Patients",    path: "/patients",       icon: "👥" },
+  { name: "Referrals",   path: "/referrals",      icon: "🏥" },
   { name: "Reports",     path: "/reports",         icon: "📋" },
   { name: "Templates",   path: "/templates",       icon: "🗂️" },
   { name: "Analytics",   path: "/analytics",       icon: "📊" },

@@ -53,6 +53,8 @@ const saveReport = async (data) => {
     age,
     gender,
     doctorId,
+    referralDoctorId,
+    referralDoctorName,
     templateId,
     reportType,
     sections,
@@ -80,12 +82,31 @@ const saveReport = async (data) => {
     }
   }
 
+  // 🔥 Auto-create referral doctor if not provided
+  if (!referralDoctorId && referralDoctorName) {
+    try {
+      await new Promise((res, rej) => {
+        db.run(
+          "INSERT INTO referral_doctors (name) VALUES (?)",
+          [referralDoctorName],
+          function (err) {
+            if (err) return rej(err);
+            referralDoctorId = this.lastID;
+            res();
+          }
+        );
+      });
+    } catch (err) {
+      console.error("Failed to auto-create referral doctor:", err);
+    }
+  }
+
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO reports
        (report_number, patient_prefix, patient_name, age, gender,
-        doctor_id, template_id, report_type, sections, patient_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        doctor_id, template_id, report_type, sections, patient_id, referral_doctor_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         reportNumber,
         patientPrefix,
@@ -97,6 +118,7 @@ const saveReport = async (data) => {
         reportType || "UPPER GI ENDOSCOPY",
         JSON.stringify(sections || []),
         patientId || null,
+        referralDoctorId || null,
       ],
       function (err) {
         if (err) return reject(err);

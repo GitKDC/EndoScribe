@@ -54,14 +54,17 @@ interface ReportFormProps {
   onReportTypeChange:  (v: string) => void;
   onTemplateSelect:    (templateId: number) => void;
   setPrefix:           (v: string) => void;
+  referralName:        string;
+  onReferralNameChange: (v: string) => void;
+  onReferralIdChange?: (id: number | null) => void;
 }
 
 const ReportForm: React.FC<ReportFormProps> = ({
   patientName, patientPhone, patientAge, reportDate, reportType, prefix,
-  sections, setSections, templates,
-  selectedDoctorIds, setSelectedDoctorIds,
-  onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange, onReportDateChange,
-  onReportTypeChange, onTemplateSelect, setPrefix,
+  doctorName, sections, setSections, templates, selectedDoctorIds, setSelectedDoctorIds,
+  onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange,
+  onReportDateChange, onReportTypeChange, onTemplateSelect, setPrefix,
+  referralName, onReferralNameChange, onReferralIdChange
 }) => {
   const [activeField, setActiveField] = useState<string | null>(null);
   const [age, setAge]     = useState("");
@@ -75,6 +78,11 @@ const ReportForm: React.FC<ReportFormProps> = ({
   const [patients, setPatients] = useState<any[]>([]);
   const [showPatientSugs, setShowPatientSugs] = useState(false);
   const patientInputRef = useRef<HTMLDivElement>(null);
+  
+  // ── Referral Autocomplete ──
+  const [referrals, setReferrals] = useState<any[]>([]);
+  const [showReferralSugs, setShowReferralSugs] = useState(false);
+  const referralInputRef = useRef<HTMLDivElement>(null);
 
   // ref for the trigger element — used to measure where to place the dropdown
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -106,6 +114,17 @@ const ReportForm: React.FC<ReportFormProps> = ({
       }
     };
     loadPatients();
+    
+    const loadReferrals = async () => {
+      if (!(window as any).api) return;
+      try {
+        const res = await (window as any).api.getReferrals({ limit: 500 });
+        setReferrals(Array.isArray(res) ? res : (res?.data || []));
+      } catch (err) {
+        console.error("Failed to load referrals:", err);
+      }
+    };
+    loadReferrals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -153,6 +172,9 @@ const ReportForm: React.FC<ReportFormProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (patientInputRef.current && !patientInputRef.current.contains(e.target as Node)) {
         setShowPatientSugs(false);
+      }
+      if (referralInputRef.current && !referralInputRef.current.contains(e.target as Node)) {
+        setShowReferralSugs(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -384,6 +406,49 @@ const ReportForm: React.FC<ReportFormProps> = ({
                 }}
               placeholder="Phone No." onFocus={focus("ph")} onBlur={blur}
               style={{ ...inp("ph"), width: "100%" }} />
+          </div>
+          <div style={{ marginBottom: "12px" }} ref={referralInputRef}>
+            <label style={lbl}>Referred By</label>
+            <div style={{ position: "relative" }}>
+              <input 
+                type="text" 
+                value={referralName} 
+                onChange={e => {
+                  onReferralNameChange(e.target.value);
+                  onReferralIdChange?.(null);
+                  setShowReferralSugs(true);
+                }}
+                onFocus={() => { focus("rf")(); setShowReferralSugs(true); }}
+                onBlur={blur}
+                style={{ ...inp("rf"), width: "100%" }} 
+                placeholder="Search referral doctor..." 
+              />
+              {showReferralSugs && referralName.length > 0 && (
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "white", border: "1px solid #ddd", borderRadius: "0 0 6px 6px", maxHeight: "200px", overflowY: "auto", zIndex: 50, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                  {referrals.filter(r => r.name.toLowerCase().includes(referralName.toLowerCase())).length === 0 ? (
+                    <div style={{ padding: "10px", color: "#666", fontSize: "14px" }}>
+                      New Referral Doctor will be created.
+                    </div>
+                  ) : (
+                    referrals.filter(r => r.name.toLowerCase().includes(referralName.toLowerCase())).map(r => (
+                      <div 
+                        key={r.id}
+                        className="pat-sug"
+                        onClick={() => {
+                          onReferralNameChange(r.name);
+                          onReferralIdChange?.(r.id);
+                          setShowReferralSugs(false);
+                        }}
+                        style={{ padding: "10px", borderBottom: "1px solid #eee", cursor: "pointer", display: "flex", justifyContent: "space-between" }}
+                      >
+                        <span style={{ fontWeight: 600, color: THEME.navy }}>{r.name}</span>
+                        {r.clinic_name && <span style={{ color: "#666", fontSize: "13px" }}>🏥 {r.clinic_name}</span>}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: "10px" }}>

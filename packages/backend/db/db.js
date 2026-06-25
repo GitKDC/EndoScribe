@@ -42,10 +42,17 @@ if (fs.existsSync(migrationPath)) {
     if (err) {
       console.error("❌ Migration error:", err);
     } else {
-      console.log("✅ Migrations completed");
+      console.log("✅ Base Migrations completed");
+    }
+    
+    // Fallback: Run alter tables individually because sqlite stops db.exec on first error (e.g., column already exists)
+    db.run("ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id);", (e) => {});
+    db.run("ALTER TABLE reports ADD COLUMN referral_doctor_id INTEGER REFERENCES referral_doctors(id);", (e) => {});
+    db.run("ALTER TABLE referral_doctors ADD COLUMN city TEXT;", (e) => {
+      console.log("✅ DB schema checks completed");
       const { seedTemplates } = require("./seedTemplates");
       seedTemplates(db);
-    }
+    });
   });
 } else {
   console.warn("⚠️ Migration file not found at:", migrationPath);

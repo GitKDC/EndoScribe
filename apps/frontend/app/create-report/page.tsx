@@ -88,6 +88,10 @@ export default function Home() {
   const [images,        setImages]        = useState<ImageData[]>([]);
   const [prefix,        setPrefix]        = useState("Mr");
   const [reportNumber,  setReportNumber]  = useState<string | null>(null); // e.g. "SH-2026-001"
+  
+  // ── Referral Doctor ─────────────────────────────────────────────────────────
+  const [referralName, setReferralName] = useState("");
+  const [referralId, setReferralId] = useState<number | null>(null);
 
   // 🔥 NEW: doctors selected for this report's footer
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -276,6 +280,8 @@ export default function Home() {
           age:      patientAge ? parseInt(patientAge) : null,
           gender:   patientAge?.includes("/F") ? "F" : "M",
           doctorId: primaryDoctorId,
+          referralDoctorId: referralId,
+          referralDoctorName: referralName,
           reportType,
           sections,
           images: images.map((img, i) => ({
@@ -464,6 +470,9 @@ export default function Home() {
               onTemplateSelect={handleTemplateSelect}
               prefix={prefix}
               setPrefix={setPrefix}
+              referralName={referralName}
+              onReferralNameChange={setReferralName}
+              onReferralIdChange={setReferralId}
             />
 
             {/* Image uploader */}
