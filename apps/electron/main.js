@@ -106,6 +106,10 @@ async function initializeApp() {
     const referralHandlers = require("../../packages/backend/ipc/referralHandlers");
     referralHandlers.registerReferralHandlers();
 
+    console.log("🔵 Registering Dashboard IPC handlers...");
+    const dashboardHandlers = require("../../packages/backend/ipc/dashboardHandlers");
+    dashboardHandlers.registerDashboardHandlers();
+
     console.log("✅ App initialized successfully");
   } catch (error) {
     console.error("❌ Initialization error:", error);

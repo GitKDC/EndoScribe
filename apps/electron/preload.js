@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld("api", {
   // Save to DB right before PDF export — returns { id, reportNumber }
   saveReport:    async (data)  => ipcRenderer.invoke("save-report", data),
 
+  // ─── DASHBOARD APIs ────────────────────────────────────────────────────────
+  getDashboardStats: async () => ipcRenderer.invoke("get-dashboard-stats"),
+
   // Reports list / detail
   getAllReports: async (filters) => ipcRenderer.invoke("get-all-reports", filters),
   getReport:    async (id)     => ipcRenderer.invoke("get-report", id),

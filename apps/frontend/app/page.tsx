@@ -33,6 +33,13 @@ export default function Dashboard() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [time, setTime]           = useState(new Date());
 
+  const [stats, setStats] = useState({
+    todayReports: 0,
+    thisMonthReports: 0,
+    totalPatients: 0,
+    storageUsedMB: 0
+  });
+
   // 🔥 NEW: doctors state
   const [doctors, setDoctors]       = useState<Doctor[]>([]);
   const [showDocModal, setShowDocModal] = useState(false);
@@ -54,6 +61,7 @@ export default function Dashboard() {
   useEffect(() => {
     if ((window as any).api) {
       (window as any).api.getTemplates().then(setTemplates).catch(console.error);
+      (window as any).api.getDashboardStats().then(setStats).catch(console.error);
       loadDoctors();
     }
   }, []);
@@ -122,16 +130,17 @@ export default function Dashboard() {
     }
   };
 
+  const timeStr = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const dateOptions: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "long", year: "numeric" };
+  const dateStr = time.toLocaleDateString("en-US", dateOptions);
+  const fullDateTimeStr = `${timeStr} | ${dateStr}`;
+
   const greeting = () => {
     const h = time.getHours();
     if (h < 12) return "Good Morning";
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   };
-
-  const dateStr = time.toLocaleDateString("en-IN", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
 
   const ugiCount  = templates.filter(t => t.category === "UGI").length;
   const vlsCount  = templates.filter(t => t.category === "VLS").length;
@@ -213,16 +222,13 @@ export default function Dashboard() {
           }} />
 
           <div style={{ position: "relative" }}>
-            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", marginBottom: "6px" }}>
-              {dateStr}
-            </div>
-            <h1 style={{ margin: 0, fontSize: "26px", fontWeight: "800", letterSpacing: "-0.3px" }}>
+            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", letterSpacing: "-0.3px" }}>
               {greeting()}, Dr. Chaudhari
             </h1>
             <p style={{ margin: "8px 0 20px", color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>
               Shobha Hospital &amp; Superspeciality Gastroenterology Centre
             </p>
-           <div className="flex flex-row gap-6">
+           <div style={{ display: "flex", gap: "16px" }}>
                <button
               onClick={() => router.push("/create-report")}
               style={{
@@ -277,12 +283,13 @@ export default function Dashboard() {
         <div style={{ padding: "28px 36px", display: "flex", flexDirection: "column", gap: "24px" }}>
 
           {/* ── Stat cards ───────────────────────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
             {[
-              { label: "Total Templates", value: templates.length, icon: "🗂️", color: THEME.teal },
-              { label: "UGI Templates",   value: ugiCount,         icon: "🔭", color: "#7c3aed" },
-              { label: "VLS Templates",   value: vlsCount,         icon: "🩺", color: "#b45309" },
-              { label: "Doctors",         value: doctors.length,   icon: "🩻", color: "#dc2626" },
+              { label: "Today's Reports",  value: stats.todayReports,       icon: "📄", color: THEME.teal },
+              { label: "This Month",       value: stats.thisMonthReports,   icon: "📅", color: "#2563eb" },
+              { label: "Total Patients",   value: stats.totalPatients,      icon: "👥", color: "#ea580c" },
+              { label: "Total Templates",  value: templates.length,         icon: "🗂️", color: "#7c3aed" },
+              { label: "Storage Used",     value: `${stats.storageUsedMB} MB`, icon: "💾", color: THEME.muted },
             ].map((s) => (
               <div key={s.label} style={{
                 ...card,
@@ -300,15 +307,87 @@ export default function Dashboard() {
                   {s.icon}
                 </div>
                 <div>
-                  <div style={{ fontSize: "26px", fontWeight: "800", color: s.color, lineHeight: 1 }}>
+                  <div style={{ fontSize: "24px", fontWeight: "800", color: s.color, lineHeight: 1 }}>
                     {s.value}
                   </div>
-                  <div style={{ fontSize: "12px", color: THEME.muted, marginTop: "4px" }}>
+                  <div style={{ fontSize: "12px", color: THEME.muted, marginTop: "6px", fontWeight: "600" }}>
                     {s.label}
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ── 🔥 NEW: Doctors section ───────────────────────── */}
+          <div style={{ ...card, padding: "22px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
+                🩻 Doctors
+              </h3>
+              <button onClick={openAddDoctor} style={{
+                padding: "7px 16px", background: THEME.teal, color: "white",
+                border: "none", borderRadius: "7px", fontSize: "12.5px",
+                fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
+              }}>
+                + Add Doctor
+              </button>
+            </div>
+
+            {doctors.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "28px", color: THEME.muted, fontSize: "13px" }}>
+                No doctors added yet.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px" }}>
+                {doctors.map((d) => (
+                  <div key={d.id} className="doc-card" style={{
+                    border: `1px solid ${THEME.border}`,
+                    borderRadius: "10px",
+                    padding: "14px 16px",
+                    background: "#fafbfc",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                      <div>
+                        <div style={{ fontSize: "13.5px", fontWeight: "700", color: THEME.text }}>
+                          {d.name}
+                        </div>
+                        {d.qualifications && (
+                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "3px" }}>
+                            {d.qualifications}
+                          </div>
+                        )}
+                        {d.designation && (
+                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "1px" }}>
+                            {d.designation}
+                          </div>
+                        )}
+                        {!!d.is_default && (
+                          <span style={{
+                            display: "inline-block", marginTop: "6px",
+                            fontSize: "10px", fontWeight: "700", color: THEME.teal,
+                            background: THEME.tealBg, padding: "2px 8px", borderRadius: "20px",
+                          }}>
+                            Default on new reports
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                        <button onClick={() => openEditDoctor(d)} style={{
+                          padding: "4px 9px", border: `1px solid ${THEME.border}`,
+                          borderRadius: "6px", background: "white", cursor: "pointer",
+                          fontSize: "11px", fontWeight: "600", color: THEME.navy, fontFamily: "inherit",
+                        }}>Edit</button>
+                        <button onClick={() => setDelDocId(d.id)} style={{
+                          padding: "4px 9px", border: "1px solid #fecaca",
+                          borderRadius: "6px", background: THEME.dangerBg, cursor: "pointer",
+                          fontSize: "11px", fontWeight: "600", color: THEME.danger, fontFamily: "inherit",
+                        }}>Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── Quick start + template list ───────────────────── */}
@@ -417,78 +496,6 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* ── 🔥 NEW: Doctors section ───────────────────────── */}
-          <div style={{ ...card, padding: "22px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy }}>
-                🩻 Doctors
-              </h3>
-              <button onClick={openAddDoctor} style={{
-                padding: "7px 16px", background: THEME.teal, color: "white",
-                border: "none", borderRadius: "7px", fontSize: "12.5px",
-                fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
-              }}>
-                + Add Doctor
-              </button>
-            </div>
-
-            {doctors.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "28px", color: THEME.muted, fontSize: "13px" }}>
-                No doctors added yet.
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px" }}>
-                {doctors.map((d) => (
-                  <div key={d.id} className="doc-card" style={{
-                    border: `1px solid ${THEME.border}`,
-                    borderRadius: "10px",
-                    padding: "14px 16px",
-                    background: "#fafbfc",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                      <div>
-                        <div style={{ fontSize: "13.5px", fontWeight: "700", color: THEME.text }}>
-                          {d.name}
-                        </div>
-                        {d.qualifications && (
-                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "3px" }}>
-                            {d.qualifications}
-                          </div>
-                        )}
-                        {d.designation && (
-                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "1px" }}>
-                            {d.designation}
-                          </div>
-                        )}
-                        {!!d.is_default && (
-                          <span style={{
-                            display: "inline-block", marginTop: "6px",
-                            fontSize: "10px", fontWeight: "700", color: THEME.teal,
-                            background: THEME.tealBg, padding: "2px 8px", borderRadius: "20px",
-                          }}>
-                            Default on new reports
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                        <button onClick={() => openEditDoctor(d)} style={{
-                          padding: "4px 9px", border: `1px solid ${THEME.border}`,
-                          borderRadius: "6px", background: "white", cursor: "pointer",
-                          fontSize: "11px", fontWeight: "600", color: THEME.navy, fontFamily: "inherit",
-                        }}>Edit</button>
-                        <button onClick={() => setDelDocId(d.id)} style={{
-                          padding: "4px 9px", border: "1px solid #fecaca",
-                          borderRadius: "6px", background: THEME.dangerBg, cursor: "pointer",
-                          fontSize: "11px", fontWeight: "600", color: THEME.danger, fontFamily: "inherit",
-                        }}>Delete</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* ── Info strip ───────────────────────────────────── */}

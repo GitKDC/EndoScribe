@@ -73,17 +73,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* ── App Label ───────────────────────────────────────── */}
-        <div style={{
-          padding: "14px 18px 10px 18px",
-          fontSize: "15px",
-          fontWeight: "600",
-          color: "rgba(111, 226, 235, 0.71)",
-          textTransform: "uppercase",
-          letterSpacing: "1px",
-        }}>
-          EndoScribe
-        </div>
+        <div style={{ marginTop: "16px" }} />
 
         {/* ── Navigation ──────────────────────────────────────── */}
         <nav style={{ flex: 1, padding: "0 10px" }}>
