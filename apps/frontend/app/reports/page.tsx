@@ -52,6 +52,27 @@ export default function ReportsPage() {
     setLoading(false);
   };
 
+  const handleExportCSV = async () => {
+    if (!(window as any).api) return;
+    try {
+      const result = await (window as any).api.exportReportsCSV({
+        search,
+        startDate,
+        endDate,
+        procedure,
+        doctorId
+      });
+      if (result.success) {
+        alert("Reports exported successfully to " + result.filePath);
+      } else if (result.message !== "Canceled") {
+        alert("Export failed: " + result.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to export reports");
+    }
+  };
+
   useEffect(() => {
     fetchReports();
   }, [page, search, startDate, endDate, procedure, doctorId]);
@@ -102,7 +123,21 @@ export default function ReportsPage() {
 
   return (
     <div style={{ padding: "32px", fontFamily: "'Inter', sans-serif", backgroundColor: "#f4f7f6", minHeight: "100vh" }}>
-      <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", marginBottom: "24px" }}>Patient Reports</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", margin: 0 }}>Patient Reports</h2>
+        <button 
+          onClick={handleExportCSV}
+          style={{
+            padding: "10px 20px", background: "#0ea5e9", color: "white", display: "flex", alignItems: "center", gap: "8px",
+            border: "none", borderRadius: "8px", cursor: "pointer",
+            fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+        >
+          <MdDownload size={18} /> Export CSV
+        </button>
+      </div>
 
       {/* FILTERS */}
       <div style={{

@@ -4,6 +4,7 @@ import { FiSearch, FiUserPlus } from "react-icons/fi";
 import PatientForm from "../../components/PatientForm";
 import PatientProfile from "../../components/PatientProfile";
 import ReportPreview from "../../components/ReportPreview";
+import { MdDownload } from "react-icons/md";
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
@@ -58,6 +59,23 @@ export default function PatientsPage() {
     setPage(1);
   }, [search]);
 
+  const handleExportCSV = async () => {
+    if (!(window as any).api) return;
+    try {
+      const result = await (window as any).api.exportPatientsCSV({
+        search
+      });
+      if (result.success) {
+        alert("Patients exported successfully to " + result.filePath);
+      } else if (result.message !== "Canceled") {
+        alert("Export failed: " + result.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to export reports");
+    }
+  };
+
   useEffect(() => {
     const t = setTimeout(() => {
       fetchPatients();
@@ -83,18 +101,32 @@ export default function PatientsPage() {
           <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", margin: 0 }}>Patients</h2>
           <p style={{ color: "#64748b", margin: "4px 0 0 0", fontSize: "14px" }}>Manage patient directory and their reports history</p>
         </div>
-        <button 
-          onClick={() => { setEditPatient(null); setShowForm(true); }}
-          style={{
-            padding: "10px 20px", background: "#0d9488", color: "white",
-            border: "none", borderRadius: "8px", cursor: "pointer",
-            fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-        >
-          + Add Patient
-        </button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button 
+            onClick={handleExportCSV}
+            style={{
+              padding: "10px 20px", background: "#0ea5e9", color: "white", display: "flex", alignItems: "center", gap: "8px",
+              border: "none", borderRadius: "8px", cursor: "pointer",
+              fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          >
+            <MdDownload size={18} /> Export CSV
+          </button>
+          <button 
+            onClick={() => { setEditPatient(null); setShowForm(true); }}
+            style={{
+              padding: "10px 20px", background: "#0d9488", color: "white", display: "flex", alignItems: "center", gap: "8px",
+              border: "none", borderRadius: "8px", cursor: "pointer",
+              fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          >
+            <FiUserPlus size={18} /> Add Patient
+          </button>
+        </div>
       </div>
 
       {/* FILTER BAR */}

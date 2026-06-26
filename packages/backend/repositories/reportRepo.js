@@ -156,6 +156,7 @@ const getAllReports = (filters = {}) => {
     let baseQuery = `
       FROM reports r
       LEFT JOIN doctors d ON r.doctor_id = d.id
+      LEFT JOIN referral_doctors rd ON r.referral_doctor_id = rd.id
       WHERE 1=1
     `;
     let countParams = [];
@@ -187,9 +188,23 @@ const getAllReports = (filters = {}) => {
       const offset = (page - 1) * limit;
       let dataQuery = `
         SELECT r.id, r.report_number, r.patient_prefix, r.patient_name,
-               r.age, r.gender, r.report_type, r.created_at,
-               d.name AS doctor_name
-        ${baseQuery}
+               r.age, r.gender, r.report_type, r.created_at, r.sections, r.pdf_path,
+               d.name AS doctor_name, rd.name AS referral_name,
+               p.phone,
+               (SELECT MAX(created_at) FROM reports r2 WHERE r2.patient_id = p.id) as last_visit
+        FROM reports r
+        LEFT JOIN doctors d ON r.doctor_id = d.id
+        LEFT JOIN referral_doctors rd ON r.referral_doctor_id = rd.id
+        LEFT JOIN patients p ON r.patient_id = p.id
+        WHERE 1=1
+      `;
+      
+      if (search) dataQuery += ` AND r.patient_name LIKE ?`;
+      if (startDate && endDate) dataQuery += ` AND date(r.created_at) BETWEEN date(?) AND date(?)`;
+      if (procedure && procedure !== "All") dataQuery += ` AND r.report_type = ?`;
+      if (doctorId && doctorId !== "All") dataQuery += ` AND r.doctor_id = ?`;
+
+      dataQuery += `
         ORDER BY r.created_at DESC
         LIMIT ? OFFSET ?
       `;

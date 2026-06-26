@@ -1,4 +1,5 @@
-const { ipcMain } = require("electron");
+const { ipcMain, dialog } = require("electron");
+const fs = require("fs");
 const db = require("../db/db");
 const { getTemplate } = require("../repositories/templateRepo");
 const { generateReport } = require("../services/reportService");
@@ -45,6 +46,54 @@ const registerReportHandlers = () => {
       return reports;
     } catch (error) {
       console.error("❌ Error fetching reports:", error);
+      throw error;
+    }
+  });
+
+  // ── Export reports to CSV ──────────────────────────────────────────────────
+  ipcMain.handle("export-reports-csv", async (event, filters) => {
+    try {
+      // 1. Fetch data
+      const reportsData = await getAllReports({ ...filters, page: 1, limit: 1000000 });
+      const reports = reportsData.data || [];
+      if (reports.length === 0) return { success: false, message: "No data to export" };
+
+      // 2. Open Save Dialog
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: "Save CSV Export",
+        defaultPath: `reports_export_${new Date().toISOString().split("T")[0]}.csv`,
+        filters: [{ name: "CSV Files", extensions: ["csv"] }]
+      });
+
+      if (canceled || !filePath) return { success: false, message: "Canceled" };
+
+      // 3. Format CSV
+      const headers = ["Report Number", "Procedure Name", "Patient Name", "Doctor", "Date", "Report File (Local Path)"];
+      const escapeCSV = (str) => {
+        if (str === null || str === undefined) return '""';
+        const cleanStr = String(str).replace(/"/g, '""');
+        return `"${cleanStr}"`;
+      };
+
+      const rows = reports.map(report => {
+        return [
+          escapeCSV(report.report_number),
+          escapeCSV(report.report_type),
+          escapeCSV(report.patient_name),
+          escapeCSV(report.doctor_name || "Unknown"),
+          escapeCSV(new Date(report.created_at).toLocaleDateString("en-GB")),
+          escapeCSV(report.pdf_path || "Not downloaded yet")
+        ].join(",");
+      });
+
+      const csvContent = [headers.join(","), ...rows].join("\n");
+      
+      // 4. Write to disk
+      fs.writeFileSync(filePath, csvContent, "utf-8");
+      
+      return { success: true, filePath };
+    } catch (error) {
+      console.error("❌ Error exporting reports:", error);
       throw error;
     }
   });

@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld("api", {
   createPatient: async (data)   => ipcRenderer.invoke("create-patient", data),
   updatePatient: async (id, d)  => ipcRenderer.invoke("update-patient", { id, ...d }),
   deletePatient: async (id)     => ipcRenderer.invoke("delete-patient", id),
+  exportPatientsCSV: async (query) => ipcRenderer.invoke("export-patients-csv", query),
 
   // ─── REFERRAL APIs ────────────────────────────────────────────────────────
   getReferrals:   async (filters) => ipcRenderer.invoke("get-referrals", filters),
@@ -49,6 +50,7 @@ contextBridge.exposeInMainWorld("api", {
 
   // Reports list / detail
   getAllReports: async (filters) => ipcRenderer.invoke("get-all-reports", filters),
+  exportReportsCSV: async (filters) => ipcRenderer.invoke("export-reports-csv", filters),
   getReport:    async (id)     => ipcRenderer.invoke("get-report", id),
 
   // ─── SETTINGS ────────────────────────────────────────────────────────────
