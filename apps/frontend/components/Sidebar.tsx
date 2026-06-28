@@ -55,9 +55,9 @@ export default function Sidebar() {
           gap: "12px",
         }}>
           <img
-            src="/images/logo.png"
+            src="/images/shlogo.png"
             alt="Shobha Hospital Logo"
-            style={{ width: "44px", height: "44px", objectFit: "contain", flexShrink: 0 }}
+            style={{ width: "46px", height: "46px", objectFit: "contain", flexShrink: 0 }}
             onError={(e) => {
               const img = e.target as HTMLImageElement;
               img.style.display = "none";
@@ -74,7 +74,7 @@ export default function Sidebar() {
           }}><FiHeart size={22} color="#fff" /></div>
 
           <div>
-            <div style={{ fontSize: "16px", fontWeight: "700", lineHeight: 1.2, color: "#e0f2fe", letterSpacing: "0.2px" }}>
+            <div style={{ fontSize: "18px", fontWeight: "700", lineHeight: 1.2, color: "#d2e6f3", letterSpacing: "0.2px" }}>
               Shobha Hospital
             </div>
             <div style={{ fontSize: "13px", color: "#7dd3fc", lineHeight: 1.3, marginTop: "2px" }}>

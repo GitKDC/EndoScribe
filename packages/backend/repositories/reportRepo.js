@@ -66,17 +66,28 @@ const saveReport = async (data) => {
   // 🔥 Auto-create patient if not provided
   if (!patientId && patientName) {
     try {
-      await new Promise((res, rej) => {
-        db.run(
-          "INSERT INTO patients (name, phone, age, gender) VALUES (?, ?, ?, ?)",
-          [patientName, patientPhone || null, age || null, gender || "M"],
-          function (err) {
-            if (err) return rej(err);
-            patientId = this.lastID;
-            res();
-          }
-        );
+      const existingPatient = await new Promise((res, rej) => {
+        db.get("SELECT id FROM patients WHERE name = ? COLLATE NOCASE", [patientName.trim()], (err, row) => {
+          if (err) return rej(err);
+          res(row);
+        });
       });
+
+      if (existingPatient) {
+        patientId = existingPatient.id;
+      } else {
+        await new Promise((res, rej) => {
+          db.run(
+            "INSERT INTO patients (name, phone, age, gender) VALUES (?, ?, ?, ?)",
+            [patientName.trim(), patientPhone || null, age || null, gender || "M"],
+            function (err) {
+              if (err) return rej(err);
+              patientId = this.lastID;
+              res();
+            }
+          );
+        });
+      }
     } catch (err) {
       console.error("Failed to auto-create patient:", err);
     }
@@ -85,17 +96,28 @@ const saveReport = async (data) => {
   // 🔥 Auto-create referral doctor if not provided
   if (!referralDoctorId && referralDoctorName) {
     try {
-      await new Promise((res, rej) => {
-        db.run(
-          "INSERT INTO referral_doctors (name) VALUES (?)",
-          [referralDoctorName],
-          function (err) {
-            if (err) return rej(err);
-            referralDoctorId = this.lastID;
-            res();
-          }
-        );
+      const existingReferral = await new Promise((res, rej) => {
+        db.get("SELECT id FROM referral_doctors WHERE name = ? COLLATE NOCASE", [referralDoctorName.trim()], (err, row) => {
+          if (err) return rej(err);
+          res(row);
+        });
       });
+
+      if (existingReferral) {
+        referralDoctorId = existingReferral.id;
+      } else {
+        await new Promise((res, rej) => {
+          db.run(
+            "INSERT INTO referral_doctors (name) VALUES (?)",
+            [referralDoctorName.trim()],
+            function (err) {
+              if (err) return rej(err);
+              referralDoctorId = this.lastID;
+              res();
+            }
+          );
+        });
+      }
     } catch (err) {
       console.error("Failed to auto-create referral doctor:", err);
     }
