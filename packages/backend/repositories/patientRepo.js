@@ -4,12 +4,12 @@ const patientRepo = {
   // Create a new patient
   createPatient: (data) => {
     return new Promise((resolve, reject) => {
-      const { name, phone, age, gender } = data;
+      const { name, phone, age, gender, city } = data;
       const query = `
-        INSERT INTO patients (name, phone, age, gender)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO patients (name, phone, age, gender, city)
+        VALUES (?, ?, ?, ?, ?)
       `;
-      db.run(query, [name, phone, age, gender], function (err) {
+      db.run(query, [name, phone, age, gender, city || null], function (err) {
         if (err) return reject(err);
         resolve({ id: this.lastID, ...data });
       });
@@ -45,7 +45,7 @@ const patientRepo = {
 
         let dataQuery = `
           SELECT 
-            p.id, p.name, p.phone, p.age, p.gender, p.created_at,
+            p.id, p.name, p.phone, p.age, p.gender, p.city, p.created_at,
             (SELECT COUNT(*) FROM reports r WHERE r.patient_id = p.id) as report_count,
             (SELECT MAX(created_at) FROM reports r WHERE r.patient_id = p.id) as last_visit
           ${baseQuery}
@@ -88,13 +88,13 @@ const patientRepo = {
   // Update a patient
   updatePatient: (id, data) => {
     return new Promise((resolve, reject) => {
-      const { name, phone, age, gender } = data;
+      const { name, phone, age, gender, city } = data;
       const query = `
-        UPDATE patients
-        SET name = ?, phone = ?, age = ?, gender = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE patients 
+        SET name = ?, phone = ?, age = ?, gender = ?, city = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `;
-      db.run(query, [name, phone, age, gender, id], function (err) {
+      db.run(query, [name, phone, age, gender, city || null, id], function (err) {
         if (err) return reject(err);
         resolve({ changes: this.changes });
       });

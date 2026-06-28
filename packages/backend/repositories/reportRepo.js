@@ -1,5 +1,6 @@
 const db = require("../db/db");
 const fs = require("fs");
+const { parseReportDiseases } = require("../services/analyticsParser");
 
 // ─── Get a setting value ─────────────────────────────────────────────────────
 const getSetting = (key) => {
@@ -163,6 +164,9 @@ const saveReport = async (data) => {
         });
 
         stmt.finalize();
+
+        // 🔥 Trigger Analytics Parser
+        parseReportDiseases(reportId, patientId, sections);
 
         resolve({ id: reportId, reportNumber });
       }

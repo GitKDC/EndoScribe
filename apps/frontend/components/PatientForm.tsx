@@ -11,6 +11,7 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
   const [phone, setPhone] = useState(initialData?.phone || "");
   const [age, setAge] = useState<number | string>(initialData?.age || "");
   const [gender, setGender] = useState(initialData?.gender || "M");
+  const [city, setCity] = useState(initialData?.city || "");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,7 +24,7 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
     
     setSaving(true);
     try {
-      const data = { name, phone, age: Number(age) || null, gender };
+      const data = { name, phone, age: Number(age) || null, gender, city };
       if (initialData?.id) {
         await (window as any).api.updatePatient(initialData.id, data);
       } else {
@@ -93,6 +94,11 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
                 <option value="O">Other</option>
               </select>
             </div>
+          </div>
+          
+          <div style={{ marginBottom: "24px" }}>
+            <label style={lbl}>City</label>
+            <input value={city} onChange={e => setCity(e.target.value)} style={inp} placeholder="e.g. Jalgaon" />
           </div>
 
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>

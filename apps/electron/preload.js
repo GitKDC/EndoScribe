@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld("api", {
 
   // ─── DASHBOARD APIs ────────────────────────────────────────────────────────
   getDashboardStats: async () => ipcRenderer.invoke("get-dashboard-stats"),
-  getAnalytics: async () => ipcRenderer.invoke("get-analytics"),
+  getAnalytics: async (filters) => ipcRenderer.invoke("get-analytics", filters),
 
   // Reports list / detail
   getAllReports: async (filters) => ipcRenderer.invoke("get-all-reports", filters),

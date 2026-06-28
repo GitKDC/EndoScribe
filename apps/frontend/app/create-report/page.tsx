@@ -88,6 +88,7 @@ function CreateReportInner() {
   const [patientId,   setPatientId]   = useState<number | null>(null);
   const [patientPhone, setPatientPhone] = useState("");
   const [patientAge,  setPatientAge]  = useState("");
+  const [patientCity, setPatientCity] = useState("");
   const [reportDate,  setReportDate]  = useState(getCurrentDateForInput());
   const [reportType,  setReportType]  = useState(initType);
   const [doctorName,  setDoctorName]  = useState("Dr Your Name");
@@ -302,7 +303,8 @@ function CreateReportInner() {
           patientPrefix: prefix,
           patientName,
           patientPhone,
-          age:      patientAge ? parseInt(patientAge) : null,
+          patientAge: patientAge ? parseInt(patientAge) : null,
+          patientCity,
           gender:   patientAge?.includes("/F") ? "F" : "M",
           doctorId: primaryDoctorId,
           referralDoctorId: referralId,
@@ -478,6 +480,7 @@ function CreateReportInner() {
               patientName={patientName}
               patientPhone={patientPhone}
               patientAge={patientAge}
+              patientCity={patientCity}
               reportDate={reportDate}
               reportType={reportType}
               doctorName={doctorName}
@@ -493,6 +496,7 @@ function CreateReportInner() {
               onPatientPhoneChange={setPatientPhone}
               onPatientIdChange={setPatientId}
               onPatientAgeChange={setPatientAge}
+              onPatientCityChange={setPatientCity}
               onReportDateChange={setReportDate}
               onReportTypeChange={handleReportTypeChange}
               onTemplateSelect={handleTemplateSelect}

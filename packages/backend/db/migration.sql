@@ -88,6 +88,52 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('last_backup_date', NULL);
 INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_backup_enabled', '1');
 
 -- Add new columns to existing reports table if upgrading
--- (ALTER TABLE fails silently in older SQLite if column exists)
-ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id);
-ALTER TABLE reports ADD COLUMN referral_doctor_id INTEGER REFERENCES referral_doctors(id);
+-- We run these via try-catch in JS to avoid breaking the script.
+
+CREATE TABLE IF NOT EXISTS disease_dictionary (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  category TEXT,
+  keywords TEXT -- JSON array
+);
+
+CREATE TABLE IF NOT EXISTS organ_dictionary (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  keywords TEXT -- JSON array
+);
+
+CREATE TABLE IF NOT EXISTS report_diseases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id INTEGER REFERENCES reports(id) ON DELETE CASCADE,
+  patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
+  disease_name TEXT,
+  organ_name TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed basic dictionaries
+INSERT OR IGNORE INTO disease_dictionary (name, category, keywords) VALUES
+('Gastritis', 'Inflammation', '["gastritis", "antral gastritis", "pangastritis", "erythema"]'),
+('Ulcer', 'Ulcer', '["ulcer", "ulceration", "ulcers"]'),
+('Cancer', 'Malignancy', '["cancer", "ca ", "carcinoma", "malignancy", "malignant", "tumor", "growth"]'),
+('Esophagitis', 'Inflammation', '["esophagitis", "lax les"]'),
+('Barrett''s Esophagus', 'Pre-malignant', '["barrett", "barrett''s"]'),
+('Hiatus Hernia', 'Structural', '["hiatus hernia", "hiatal hernia"]'),
+('GERD', 'Reflux', '["gerd", "reflux"]'),
+('Varices', 'Vascular', '["varices", "varix"]'),
+('Portal Hypertensive Gastropathy', 'Vascular', '["phg", "portal hypertensive gastropathy"]'),
+('Polyps', 'Structural', '["polyp", "polyps", "polypoid"]'),
+('Hemorrhoids', 'Vascular', '["hemorrhoids", "piles"]'),
+('Colitis', 'Inflammation', '["colitis", "ulcerative colitis", "crohn", "ibd"]'),
+('Celiac Disease', 'Autoimmune', '["celiac", "coeliac"]'),
+('Strictures', 'Structural', '["stricture", "stenosis", "narrowing"]'),
+('Diverticulosis', 'Structural', '["diverticulosis", "diverticula", "diverticulum"]');
+
+INSERT OR IGNORE INTO organ_dictionary (name, keywords) VALUES
+('Esophagus', '["esophagus", "esophageal", "lower esophagus", "upper esophagus", "ge junction", "z-line"]'),
+('Stomach', '["stomach", "gastric", "antrum", "body", "fundus", "pylorus", "incisura"]'),
+('Duodenum', '["duodenum", "duodenal", "d1", "d2", "d3", "bulb"]'),
+('Small Intestine', '["jejunum", "ileum", "small bowel", "small intestine"]'),
+('Colon', '["colon", "ascending colon", "transverse colon", "descending colon", "sigmoid", "caecum", "cecum", "large intestine"]'),
+('Rectum', '["rectum", "rectal"]');

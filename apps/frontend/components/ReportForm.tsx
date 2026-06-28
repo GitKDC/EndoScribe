@@ -38,6 +38,7 @@ interface ReportFormProps {
   patientName: string;
   patientPhone: string;
   patientAge: string;
+  patientCity?: string;
   reportDate: string;
   reportType: string;
   doctorName: string;
@@ -54,6 +55,7 @@ interface ReportFormProps {
   onPatientPhoneChange: (v: string) => void;
   onPatientIdChange?:  (id: number | null) => void;
   onPatientAgeChange:  (v: string) => void;
+  onPatientCityChange?: (v: string) => void;
   onReportDateChange:  (v: string) => void;
   onReportTypeChange:  (v: string) => void;
   onTemplateSelect:    (templateId: number) => void;
@@ -64,10 +66,10 @@ interface ReportFormProps {
 }
 
 const ReportForm: React.FC<ReportFormProps> = ({
-  patientName, patientPhone, patientAge, reportDate, reportType, prefix,
+  patientName, patientPhone, patientAge, patientCity, reportDate, reportType, prefix,
   doctorName, sections, setSections, templates, onReportTypeChange,
   doctors, categories, onDoctorsChange, selectedDoctorIds, onDoctorSelectionChange,
-  onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange,
+  onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange, onPatientCityChange,
   onReportDateChange, onTemplateSelect, setPrefix,
   referralName, onReferralNameChange, onReferralIdChange
 }) => {

@@ -40,6 +40,11 @@ if (fs.existsSync(migrationPath)) {
       console.error("❌ Migration error:", err.message);
     } else {
       console.log("✅ Migrations completed");
+      
+      // Run safe column additions
+      db.run("ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id)", () => {});
+      db.run("ALTER TABLE reports ADD COLUMN referral_doctor_id INTEGER REFERENCES referral_doctors(id)", () => {});
+      db.run("ALTER TABLE patients ADD COLUMN city TEXT", () => {});
     }
   });
 } else {
