@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld("api", {
   saveImage: async (data) => ipcRenderer.invoke("save-image", data),
   // Save to DB right before PDF export — returns { id, reportNumber }
   saveReport:    async (data)  => ipcRenderer.invoke("save-report", data),
+  saveReportPdf: async (data)  => ipcRenderer.invoke("save-report-pdf", data),
 
   // ─── DASHBOARD APIs ────────────────────────────────────────────────────────
   getDashboardStats: async () => ipcRenderer.invoke("get-dashboard-stats"),
@@ -56,6 +57,15 @@ contextBridge.exposeInMainWorld("api", {
   // ─── SETTINGS ────────────────────────────────────────────────────────────
   getSetting: async (key)         => ipcRenderer.invoke("get-setting", key),
   setSetting: async (key, value)  => ipcRenderer.invoke("set-setting", key, value),
+
+  // ─── STORAGE & CONFIG APIs ───────────────────────────────────────────────
+  getAppConfig:   async ()       => ipcRenderer.invoke("get-app-config"),
+  setAppConfig:   async (upd)    => ipcRenderer.invoke("set-app-config", upd),
+  verifyStorage:  async ()       => ipcRenderer.invoke("verify-storage"),
+  optimizeDb:     async ()       => ipcRenderer.invoke("optimize-db"),
+  getStorageHealth: async ()     => ipcRenderer.invoke("get-storage-health"),
+  migrateStorage: async (path)   => ipcRenderer.invoke("migrate-storage", path),
+  selectFolder:   async ()       => ipcRenderer.invoke("select-folder"),
 
   // ─── BACKUP APIs ─────────────────────────────────────────────────────────
   // Manual backup → opens save-file dialog, zips db + images

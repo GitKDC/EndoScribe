@@ -3,7 +3,9 @@ import React, { useState, useEffect } from "react";
 import { FiSearch, FiUserPlus } from "react-icons/fi";
 import PatientForm from "../../components/PatientForm";
 import PatientProfile from "../../components/PatientProfile";
+import { format } from "date-fns";
 import ReportPreview from "../../components/ReportPreview";
+import { buildEndoUrl } from "../../utils/buildEndoUrl";
 import { MdDownload } from "react-icons/md";
 
 export default function PatientsPage() {
@@ -260,7 +262,7 @@ export default function PatientsPage() {
                   sections={viewReport.sections || []}
                   doctorName={viewReport.doctor_name || ""}
                   images={viewReport.images?.map((img: any) => ({
-                    id: String(img.id), url: img.url || `file://${img.file_path}`, label: "Image"
+                    id: String(img.id), url: img.url || buildEndoUrl(img.file_path), label: "Image"
                   })) || []}
                   prefix={viewReport.patient_prefix}
                   reportNumber={viewReport.report_number}

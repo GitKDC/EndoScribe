@@ -19,6 +19,7 @@ const NAV = [
   { name: "Reports",     path: "/reports",         icon: <FiFileText /> },
   { name: "Templates",   path: "/templates",       icon: <FiFolder /> },
   { name: "Analytics",   path: "/analytics",       icon: <FiActivity /> },
+  { name: "Data & Storage", path: "/settings/storage", icon: <FiFolder /> },
 ];
 
 export default function Sidebar() {

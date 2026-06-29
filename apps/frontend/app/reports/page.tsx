@@ -6,6 +6,7 @@ import { SlCalender } from "react-icons/sl";
 import { FiSearch } from "react-icons/fi";
 import { MdPrint, MdPictureAsPdf, MdDownload } from "react-icons/md";
 import { generatePDF } from "../../utils/reportGenerator";
+import { buildEndoUrl } from "../../utils/buildEndoUrl";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -120,6 +121,21 @@ export default function ReportsPage() {
       }, 500); // 500ms delay for DOM to settle
     }
   }, [downloadingReport, isGenerating]);
+
+  // 🔥 FIX: previously `img.url || endo://${img.file_path}` concatenated the
+  // raw absolute path directly into a URL string. Any space or special
+  // character in the path (e.g. macOS "Application Support") broke the
+  // browser's URL parsing silently and the image just never loaded.
+  // buildEndoUrl() percent-encodes the path first so it round-trips
+  // correctly through the endo:// protocol handler in main.js.
+  const mapImagesForPreview = (images: any[]) =>
+    (images || []).map((img: any) => ({
+      id: String(img.id),
+      url: img.url || buildEndoUrl(img.file_path),
+      label: "Image",
+      brightness: 100,
+      contrast: 100,
+    }));
 
   return (
     <div style={{ padding: "32px", fontFamily: "'Inter', sans-serif", backgroundColor: "#f4f7f6", minHeight: "100vh" }}>
@@ -344,13 +360,7 @@ export default function ReportsPage() {
                   reportType={selectedReport.report_type}
                   sections={selectedReport.sections || []}
                   doctorName={selectedReport.doctor_name || ""}
-                  images={selectedReport.images?.map((img: any) => ({
-                    id: String(img.id),
-                    url: img.url || `file://${img.file_path}`,
-                    label: "Image",
-                    brightness: 100,
-                    contrast: 100,
-                  })) || []}
+                  images={mapImagesForPreview(selectedReport.images)}
                   prefix={selectedReport.patient_prefix}
                   reportNumber={selectedReport.report_number}
                   selectedDoctors={selectedReport.doctor_name ? [{
@@ -376,13 +386,7 @@ export default function ReportsPage() {
             reportType={downloadingReport.report_type}
             sections={downloadingReport.sections || []}
             doctorName={downloadingReport.doctor_name || ""}
-            images={downloadingReport.images?.map((img: any) => ({
-              id: String(img.id),
-              url: img.url || `file://${img.file_path}`,
-              label: "Image",
-              brightness: 100,
-              contrast: 100,
-            })) || []}
+            images={mapImagesForPreview(downloadingReport.images)}
             prefix={downloadingReport.patient_prefix}
             reportNumber={downloadingReport.report_number}
             selectedDoctors={downloadingReport.doctor_name ? [{

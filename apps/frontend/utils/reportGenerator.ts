@@ -195,9 +195,22 @@ export const generatePDF = async (reportDate: string, patientName: string, patie
   // canvas is always exactly A4_PX_W × A4_PX_H → maps to one A4 page, no stretching
   pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, A4_MM_W, A4_MM_H);
 
-  pdf.save(
-  `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.pdf`
-);
+  const filename = `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.pdf`;
+  
+  // If running inside electron, send to backend to save in configured reports directory
+  if (typeof window !== "undefined" && (window as any).api && (window as any).api.saveReportPdf) {
+    const pdfDataUri = pdf.output("datauristring");
+    const base64Data = pdfDataUri.split(",")[1];
+    
+    await (window as any).api.saveReportPdf({
+      reportNumber,
+      base64Data,
+      filename
+    });
+  } else {
+    // Fallback to browser download
+    pdf.save(filename);
+  }
 };
 
 // ── Print ──────────────────────────────────────────────────────────────────────

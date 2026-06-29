@@ -156,10 +156,11 @@ const saveReport = async (data) => {
         images.forEach((img, index) => {
           console.log("📸 Image incoming:", img);
 
-          if (img && img.filePath && img.filePath.trim() !== "") {
-            stmt.run(reportId, img.filePath, index);
+          const finalPath = img.relativePath ? img.relativePath : img.filePath;
+          if (finalPath && finalPath.trim() !== "") {
+            stmt.run(reportId, finalPath, index);
           } else {
-            console.warn("Skipping image (no filePath):", img);
+            console.warn("Skipping image (no valid path):", img);
           }
         });
 
@@ -236,10 +237,22 @@ const getAllReports = (filters = {}) => {
       `;
       const dataParams = [...countParams, limit, offset];
       
+      const { getStoragePaths } = require("../utils/appPaths");
+      const path = require("path");
+
       db.all(dataQuery, dataParams, (err, rows) => {
         if (err) return reject(err);
+        
+        const configPaths = getStoragePaths();
+        const finalRows = (rows || []).map(r => {
+          if (r.pdf_path && !path.isAbsolute(r.pdf_path)) {
+            r.pdf_path = path.join(configPaths.reports, r.pdf_path);
+          }
+          return r;
+        });
+
         resolve({
-          data: rows || [],
+          data: finalRows,
           totalItems,
           totalPages,
           currentPage: page
@@ -264,13 +277,26 @@ const getReport = (id) => {
         // parse JSON sections
         row.sections = row.sections ? JSON.parse(row.sections) : [];
 
+        const { getStoragePaths } = require("../utils/appPaths");
+        const path = require("path");
+        const configPaths = getStoragePaths();
+
+        if (row.pdf_path && !path.isAbsolute(row.pdf_path)) {
+          row.pdf_path = path.join(configPaths.reports, row.pdf_path);
+        }
+
         db.all(
           "SELECT * FROM images WHERE report_id = ? ORDER BY position",
           [id],
           (err2, images) => {
             if (err2) return reject(err2);
 
-            row.images = images;
+            row.images = images.map(img => {
+              if (img.file_path && !path.isAbsolute(img.file_path)) {
+                img.file_path = path.join(configPaths.images, img.file_path);
+              }
+              return img;
+            });
             resolve(row);
           }
         );
@@ -279,4 +305,40 @@ const getReport = (id) => {
   });
 };
 
-module.exports = { saveReport, getAllReports, getReport, generateReportNumber, getSetting, setSetting };
+const saveReportPdf = (reportNumber, base64Data, filename) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const { getMonthlyReportsPath, getStoragePaths } = require("../utils/appPaths");
+
+      const reportsDir = getMonthlyReportsPath();
+      const filePath = path.join(reportsDir, filename);
+
+      const buffer = Buffer.from(base64Data, "base64");
+      fs.writeFileSync(filePath, buffer);
+
+      const baseReportsPath = getStoragePaths().reports;
+      const relativePath = path.relative(baseReportsPath, filePath);
+
+      if (reportNumber) {
+        db.run(
+          "UPDATE reports SET pdf_path = ? WHERE report_number = ?",
+          [relativePath, reportNumber],
+          (err) => {
+            if (err) {
+              console.error("Failed to link PDF to report DB:", err);
+            }
+            resolve({ success: true, relativePath, absolutePath: filePath });
+          }
+        );
+      } else {
+        resolve({ success: true, relativePath, absolutePath: filePath });
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+module.exports = { saveReport, getAllReports, getReport, generateReportNumber, getSetting, setSetting, saveReportPdf };

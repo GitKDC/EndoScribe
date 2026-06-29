@@ -66,10 +66,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     if ((window as any).api) {
-      (window as any).api.getTemplates().then(setTemplates).catch(console.error);
-      (window as any).api.getCategories().then(setCategories).catch(console.error);
-      (window as any).api.getDashboardStats().then(setStats).catch(console.error);
-      loadDoctors();
+      (window as any).api.getAppConfig().then((c: any) => {
+        if (c.isFirstLaunch) {
+          router.replace("/setup");
+        } else {
+          (window as any).api.getTemplates().then(setTemplates).catch(console.error);
+          (window as any).api.getCategories().then(setCategories).catch(console.error);
+          (window as any).api.getDashboardStats().then(setStats).catch(console.error);
+          loadDoctors();
+        }
+      });
     }
   }, []);
 

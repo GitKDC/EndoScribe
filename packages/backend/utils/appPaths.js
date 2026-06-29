@@ -1,25 +1,72 @@
+const fs = require("fs");
 const path = require("path");
-const os = require("os");
+const { readConfig, getBaseUserDataPath } = require("./config");
 
-function getUserDataPath() {
-  // ✅ In Electron: always use app.getPath("userData") — it's the correct Mac path
-  if (process.versions && process.versions.electron) {
-    const { app } = require("electron");
-    // app must be ready before calling getPath
-    if (app.isReady()) {
-      return app.getPath("userData");
-    }
+function ensureDirectory(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-
-  // ✅ CLI fallback (for seedTemplates.js run via node directly)
-  switch (process.platform) {
-    case "darwin":
-      return path.join(os.homedir(), "Library", "Application Support", "endoscopy-electron");
-    case "win32":
-      return path.join(os.homedir(), "AppData", "Roaming", "endoscopy-electron");
-    default:
-      return path.join(os.homedir(), ".config", "endoscopy-electron");
-  }
+  return dir;
 }
 
-module.exports = { getUserDataPath };
+function getUserDataPath() {
+  return getBaseUserDataPath();
+}
+
+function getStoragePaths() {
+  const config = readConfig();
+  return config.storagePaths;
+}
+
+function getDatabasePath() {
+  const p = getStoragePaths().database;
+  ensureDirectory(p);
+  return path.join(p, "endoscopy.db");
+}
+
+function getImagesBasePath() {
+  const p = getStoragePaths().images;
+  return ensureDirectory(p);
+}
+
+function getReportsBasePath() {
+  const p = getStoragePaths().reports;
+  return ensureDirectory(p);
+}
+
+function getBackupsBasePath() {
+  const p = getStoragePaths().backups;
+  return ensureDirectory(p);
+}
+
+function getExportsBasePath() {
+  const p = getStoragePaths().exports;
+  return ensureDirectory(p);
+}
+
+// Generate path like /images/2026/June
+function getMonthlyImagesPath(dateObj = new Date()) {
+  const year = dateObj.getFullYear().toString();
+  const month = dateObj.toLocaleString('default', { month: 'long' });
+  const base = getImagesBasePath();
+  return ensureDirectory(path.join(base, year, month));
+}
+
+function getMonthlyReportsPath(dateObj = new Date()) {
+  const year = dateObj.getFullYear().toString();
+  const month = dateObj.toLocaleString('default', { month: 'long' });
+  const base = getReportsBasePath();
+  return ensureDirectory(path.join(base, year, month));
+}
+
+module.exports = {
+  getUserDataPath,
+  getStoragePaths,
+  getDatabasePath,
+  getImagesBasePath,
+  getReportsBasePath,
+  getBackupsBasePath,
+  getExportsBasePath,
+  getMonthlyImagesPath,
+  getMonthlyReportsPath
+};

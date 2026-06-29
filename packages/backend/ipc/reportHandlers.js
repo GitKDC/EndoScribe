@@ -98,6 +98,17 @@ const registerReportHandlers = () => {
     }
   });
 
+  // ── Save PDF directly to reports directory ─────────────────────────────────
+  ipcMain.handle("save-report-pdf", async (_, data) => {
+    try {
+      const { saveReportPdf } = require("../repositories/reportRepo");
+      return await saveReportPdf(data.reportNumber, data.base64Data, data.filename);
+    } catch (error) {
+      console.error("❌ Error saving report pdf:", error);
+      throw error;
+    }
+  });
+
   // ── Get single report ─────────────────────────────────────────────────────
   ipcMain.handle("get-report", async (_, id) => {
     try {
