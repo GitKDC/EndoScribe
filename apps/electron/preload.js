@@ -66,6 +66,9 @@ contextBridge.exposeInMainWorld("api", {
   getStorageHealth: async ()     => ipcRenderer.invoke("get-storage-health"),
   migrateStorage: async (path)   => ipcRenderer.invoke("migrate-storage", path),
   selectFolder:   async ()       => ipcRenderer.invoke("select-folder"),
+  getOldDataSummary: async ()    => ipcRenderer.invoke("get-old-data-summary"),
+  verifyAdminPassword: async (p) => ipcRenderer.invoke("verify-admin-password", p),
+  deleteOldData: async ()        => ipcRenderer.invoke("delete-old-data"),
 
   // ─── BACKUP APIs ─────────────────────────────────────────────────────────
   // Manual backup → opens save-file dialog, zips db + images
@@ -80,6 +83,11 @@ contextBridge.exposeInMainWorld("api", {
   // ─── MISC ────────────────────────────────────────────────────────────────
   getAppDataPath: () => ipcRenderer.invoke("get-app-data-path"),
   isElectron:     () => true,
+
+  // ─── GOOGLE CONTACTS ─────────────────────────────────────────────────────
+  getGoogleCredentials: async () => ipcRenderer.invoke("get-google-credentials"),
+  setGoogleCredentials: async (data) => ipcRenderer.invoke("set-google-credentials", data),
+  syncGoogleContacts: async (data) => ipcRenderer.invoke("sync-google-contacts", data),
 });
 
 console.log("✅ API bridge ready");

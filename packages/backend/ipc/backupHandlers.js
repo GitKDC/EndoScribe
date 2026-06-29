@@ -5,6 +5,7 @@ const path = require("path");
 const archiver = require("archiver");
 
 const { getSetting, setSetting } = require("../repositories/reportRepo");
+const { getDatabasePath, getImagesBasePath, getReportsBasePath } = require("../utils/appPaths");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const daysBetween = (dateStr, now = new Date()) => {
@@ -17,7 +18,7 @@ const daysBetween = (dateStr, now = new Date()) => {
 const createZip = (destPath, dbPath, imagesPath) => {
   return new Promise((resolve, reject) => {
     const output  = fs.createWriteStream(destPath);
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const archive = new archiver.ZipArchive({ zlib: { level: 9 } });
 
     archive.on("error", reject);
 
@@ -59,9 +60,8 @@ function registerBackupHandlers() {
 
   // ── A. Manual Backup ────────────────────────────────────────────────────
   ipcMain.handle("create-backup", async () => {
-    const userData   = app.getPath("userData");
-    const dbPath     = path.join(userData, "endoscopy.db");
-    const imagesPath = path.join(userData, "images");
+    const dbPath     = getDatabasePath();
+    const imagesPath = getImagesBasePath();
 
     console.log("📦 Backup DB path:", dbPath);
     console.log("📦 Backup images path:", imagesPath);
@@ -97,13 +97,12 @@ function registerBackupHandlers() {
 
     if (days < 30) return { skipped: true, reason: "recent", daysSince: days };
 
-    const userData   = app.getPath("userData");
-    const dbPath     = path.join(userData, "endoscopy.db");
-    const imagesPath = path.join(userData, "images");
+    const dbPath     = getDatabasePath();
+    const imagesPath = getImagesBasePath();
 
     if (!fs.existsSync(dbPath)) return { skipped: true, reason: "no_db" };
 
-    const autoDir = path.join(userData, "backups");
+    const autoDir = require("../utils/appPaths").getBackupsBasePath ? require("../utils/appPaths").getBackupsBasePath() : path.join(app.getPath("userData"), "backups");
     if (!fs.existsSync(autoDir)) fs.mkdirSync(autoDir, { recursive: true });
 
     const date     = new Date().toISOString().split("T")[0];

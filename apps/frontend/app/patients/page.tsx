@@ -1,12 +1,15 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiUserPlus } from "react-icons/fi";
+import { FiSearch, FiUserPlus, FiEdit2, FiUser } from "react-icons/fi";
 import PatientForm from "../../components/PatientForm";
 import PatientProfile from "../../components/PatientProfile";
 import { format } from "date-fns";
 import ReportPreview from "../../components/ReportPreview";
 import { buildEndoUrl } from "../../utils/buildEndoUrl";
 import { MdDownload } from "react-icons/md";
+import { Card } from "../../components/ui/Card";
+import { Table, TableRow, TableCell } from "../../components/ui/Table";
+import { Button } from "../../components/ui/Button";
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
@@ -152,49 +155,33 @@ export default function PatientsPage() {
       </div>
 
       {/* TABLE */}
-      <div style={{ background: "white", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-          <thead>
-            <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Name</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Phone</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Age/Gender</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Reports</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Last Visit</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase", textAlign: "center" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card style={{ overflow: "hidden" }}>
+        <Table headers={["Name", "Phone", "Age/Gender", "Reports", "Last Visit", "Actions"]}>
             {loading ? (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading patients...</td></tr>
+              <TableRow><TableCell colSpan={6} style={{ textAlign: "center", color: "#64748b" }}>Loading patients...</TableCell></TableRow>
             ) : patients.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>No patients found</td></tr>
+              <TableRow><TableCell colSpan={6} style={{ textAlign: "center", color: "#64748b" }}>No patients found</TableCell></TableRow>
             ) : (
               patients.map(p => (
-                <tr key={p.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "16px 24px", fontWeight: "600", color: "#1e293b" }}>{p.name}</td>
-                  <td style={{ padding: "16px 24px", color: "#64748b" }}>{p.phone || "-"}</td>
-                  <td style={{ padding: "16px 24px", color: "#64748b" }}>{p.age ? `${p.age} / ${p.gender}` : p.gender}</td>
-                  <td style={{ padding: "16px 24px", fontWeight: "600", color: "#0d9488" }}>{p.report_count}</td>
-                  <td style={{ padding: "16px 24px", color: "#64748b" }}>
+                <TableRow key={p.id}>
+                  <TableCell style={{ fontWeight: "600", color: "#1e293b" }}>{p.name}</TableCell>
+                  <TableCell>{p.phone || "-"}</TableCell>
+                  <TableCell>{p.age ? `${p.age} / ${p.gender}` : p.gender}</TableCell>
+                  <TableCell style={{ fontWeight: "600", color: "#0d9488" }}>{p.report_count}</TableCell>
+                  <TableCell>
                     {p.last_visit ? format(new Date(p.last_visit), "dd MMM yyyy") : "-"}
-                  </td>
-                  <td style={{ padding: "16px 24px", textAlign: "center", display: "flex", justifyContent: "center", gap: "8px" }}>
-                    <button 
-                      onClick={() => handleOpenProfile(p.id)}
-                      style={{ padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer", background: "white", border: "1px solid #ccc", borderRadius: "6px" }}
-                    >Profile</button>
-                    <button 
-                      onClick={() => { setEditPatient(p); setShowForm(true); }}
-                      style={{ padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer", background: "white", border: "1px solid #ccc", borderRadius: "6px" }}
-                    >Edit</button>
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell>
+                    <div style={{ display: "flex", gap: "8px", marginLeft: "-8px" }}>
+                      <Button variant="icon" size="sm" icon={<FiUser />} onClick={() => handleOpenProfile(p.id)} />
+                      <Button variant="icon" size="sm" icon={<FiEdit2 />} onClick={() => { setEditPatient(p); setShowForm(true); }} />
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+        </Table>
+      </Card>
 
       {/* PAGINATION */}
       {!loading && total > 0 && (
@@ -262,11 +249,11 @@ export default function PatientsPage() {
                   sections={viewReport.sections || []}
                   doctorName={viewReport.doctor_name || ""}
                   images={viewReport.images?.map((img: any) => ({
-                    id: String(img.id), url: img.url || buildEndoUrl(img.file_path), label: "Image"
+                    id: String(img.id), url: img.url || buildEndoUrl(img.file_path), label: "Image", nbiLabel: img.nbi_label || undefined, brightness: img.brightness ?? 70, contrast: img.contrast ?? 70
                   })) || []}
                   prefix={viewReport.patient_prefix}
                   reportNumber={viewReport.report_number}
-                  selectedDoctors={viewReport.doctor_name ? [{ id: viewReport.doctor_id, name: viewReport.doctor_name, qualifications: viewReport.qualifications, designation: viewReport.designation }] : undefined}
+                  selectedDoctors={viewReport.selected_doctors}
                 />
               </div>
             </div>

@@ -182,41 +182,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
-                  <label style={{ fontSize: 10 }}>Brightness</label>
-                  <input
-                    type="range"
-                    min="50"
-                    max="150"
-                    value={img.brightness || 100}
-                    onChange={(e) => {
-                      const updated = images.map((i) =>
-                        i.id === img.id
-                          ? { ...i, brightness: Number(e.target.value) }
-                          : i
-                      );
-
-                      onImagesUpdated(updated);
-                    }}
-                  />
-
-                  <label style={{ fontSize: 10 }}>Contrast</label>
-                  <input
-                    type="range"
-                    min="50"
-                    max="150"
-                    value={img.contrast || 100}
-                    onChange={(e) => {
-                      const updated = images.map((i) =>
-                        i.id === img.id
-                          ? { ...i, contrast: Number(e.target.value) }
-                          : i
-                      );
-
-                      onImagesUpdated(updated);
-                    }}
-                  />
-                </div>
 
                 <button
                   onClick={() => onImageRemoved(img.id)}

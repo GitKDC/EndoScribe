@@ -37,6 +37,14 @@ export default function PatientProfile({ patient, onClose, onViewReport }: Patie
               <span>•</span>
               <span>👤 {patient.age ? `${patient.age} Yrs` : "N/A"} / {patient.gender}</span>
             </div>
+            <div style={{ color: "#64748b", fontSize: "14px", marginTop: "4px", display: "flex", gap: "12px" }}>
+              {patient.city && (
+                <><span>🏠 {patient.city}</span><span>•</span></>
+              )}
+              {patient.procedure_type && (
+                <span>⚕️ {patient.procedure_type}</span>
+              )}
+            </div>
           </div>
           <button onClick={onClose} style={{
             background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "#666"

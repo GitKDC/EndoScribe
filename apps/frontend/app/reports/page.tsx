@@ -7,6 +7,9 @@ import { FiSearch } from "react-icons/fi";
 import { MdPrint, MdPictureAsPdf, MdDownload } from "react-icons/md";
 import { generatePDF } from "../../utils/reportGenerator";
 import { buildEndoUrl } from "../../utils/buildEndoUrl";
+import { Card } from "../../components/ui/Card";
+import { Table, TableRow, TableCell } from "../../components/ui/Table";
+import { Button } from "../../components/ui/Button";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -29,7 +32,7 @@ export default function ReportsPage() {
 
   // Download state
   const [downloadingReport, setDownloadingReport] = useState<any>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingId, setGeneratingId] = useState<number | null>(null);
 
   const fetchReports = async () => {
     if (!(window as any).api) return;
@@ -95,32 +98,37 @@ export default function ReportsPage() {
 
   const handleDownloadPDF = async (id: number) => {
     if (!(window as any).api) return;
-    setIsGenerating(true);
+    setGeneratingId(id);
     const data = await (window as any).api.getReport(id);
     setDownloadingReport(data);
   };
 
   useEffect(() => {
-    if (downloadingReport && isGenerating) {
+    if (downloadingReport && generatingId !== null) {
       // Need a short delay to allow React to mount the off-screen ReportPreview and images to load
       setTimeout(async () => {
         try {
-          await generatePDF(
+          const result = await generatePDF(
             downloadingReport.created_at,
             downloadingReport.patient_name,
             `${downloadingReport.age} Yrs / ${downloadingReport.gender}`,
-            downloadingReport.report_type
+            downloadingReport.report_type,
+            downloadingReport.report_number,
+            true // downloadToDownloads flag
           );
+          if (result && result.absolutePath) {
+            // We can optionally show an alert, or since it downloads to browser default, we can omit it.
+          }
         } catch (err) {
           console.error("PDF generation failed", err);
           alert("Failed to generate PDF");
         } finally {
-          setIsGenerating(false);
+          setGeneratingId(null);
           setDownloadingReport(null);
         }
       }, 500); // 500ms delay for DOM to settle
     }
-  }, [downloadingReport, isGenerating]);
+  }, [downloadingReport, generatingId]);
 
   // 🔥 FIX: previously `img.url || endo://${img.file_path}` concatenated the
   // raw absolute path directly into a URL string. Any space or special
@@ -133,8 +141,9 @@ export default function ReportsPage() {
       id: String(img.id),
       url: img.url || buildEndoUrl(img.file_path),
       label: "Image",
-      brightness: 100,
-      contrast: 100,
+      nbiLabel: img.nbi_label || undefined,
+      brightness: img.brightness ?? 70,
+      contrast: img.contrast ?? 70,
     }));
 
   return (
@@ -226,60 +235,39 @@ export default function ReportsPage() {
       </div>
 
       {/* TABLE */}
-      <div style={{ background: "white", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #eaeaea", color: "#777", fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              <th style={{ padding: "18px 24px", fontWeight: "700" }}>Report No</th>
-              <th style={{ padding: "18px 24px", fontWeight: "700" }}>Patient</th>
-              <th style={{ padding: "18px 24px", fontWeight: "700" }}>Procedure</th>
-              <th style={{ padding: "18px 24px", fontWeight: "700" }}>Doctor</th>
-              <th style={{ padding: "18px 24px", fontWeight: "700" }}>Date</th>
-              <th style={{ padding: "18px 24px", fontWeight: "700", textAlign: "center" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card style={{ overflowX: "auto" }}>
+        <Table headers={["Report No", "Patient", "Procedure", "Doctor", "Date", "Actions"]}>
             {loading ? (
-              <tr><td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#666", fontSize: "15px" }}>Loading reports...</td></tr>
+              <TableRow><TableCell colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#666", fontSize: "15px" }}>Loading reports...</TableCell></TableRow>
             ) : reports.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#666", fontSize: "15px" }}>No reports found matching your criteria.</td></tr>
+              <TableRow><TableCell colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#666", fontSize: "15px" }}>No reports found matching your criteria.</TableCell></TableRow>
             ) : (
               reports.map((r) => (
-                <tr key={r.id} style={{ borderBottom: "1px solid #f0f0f0", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = "#fafafa"} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
-                  <td style={{ padding: "16px 24px", fontSize: "14px", fontWeight: "600", color: "#333" }}>{r.report_number || "-"}</td>
-                  <td style={{ padding: "16px 24px", fontSize: "15px", color: "#111", fontWeight: "500" }}>{r.patient_prefix} {r.patient_name}</td>
-                  <td style={{ padding: "16px 24px", fontSize: "14px", color: "#007bff", fontWeight: "600" }}>{r.report_type}</td>
-                  <td style={{ padding: "16px 24px", fontSize: "14px", color: "#555" }}>{r.doctor_name || "-"}</td>
-                  <td style={{ padding: "16px 24px", fontSize: "14px", color: "#555", fontWeight: "500" }}>
+                <TableRow key={r.id}>
+                  <TableCell style={{ fontWeight: "600", color: "#333" }}>{r.report_number || "-"}</TableCell>
+                  <TableCell style={{ fontWeight: "500", color: "#111" }}>{r.patient_prefix} {r.patient_name}</TableCell>
+                  <TableCell style={{ color: "#007bff", fontWeight: "600" }}>{r.report_type}</TableCell>
+                  <TableCell>{r.doctor_name || "-"}</TableCell>
+                  <TableCell style={{ fontWeight: "500" }}>
                     {new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </td>
-                  <td style={{ padding: "16px 24px", textAlign: "center" }}>
-                    <button 
-                      onClick={() => handleView(r.id)} 
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#0d9488", transition: "transform 0.1s", marginRight: "12px" }} 
-                      title="View Report"
-                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                    >
-                      <IoMdEye size={22} />
-                    </button>
-                    <button 
-                      onClick={() => handleDownloadPDF(r.id)} 
-                      disabled={isGenerating}
-                      style={{ background: "none", border: "none", cursor: isGenerating ? "wait" : "pointer", color: "#0369a1", transition: "transform 0.1s", opacity: isGenerating ? 0.5 : 1 }} 
-                      title="Download PDF"
-                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                    >
-                      <MdDownload size={22} />
-                    </button>
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell>
+                    <div style={{ display: "flex", gap: "8px", marginLeft: "-8px" }}>
+                      <Button variant="icon" size="sm" icon={<IoMdEye size={18} />} onClick={() => handleView(r.id)} />
+                      <Button 
+                        variant="icon" 
+                        size="sm" 
+                        icon={<MdDownload size={18} />} 
+                        onClick={() => handleDownloadPDF(r.id)} 
+                        disabled={generatingId === r.id} 
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+        </Table>
+      </Card>
 
       {/* PAGINATION */}
       {reports.length > 0 && (
@@ -363,12 +351,7 @@ export default function ReportsPage() {
                   images={mapImagesForPreview(selectedReport.images)}
                   prefix={selectedReport.patient_prefix}
                   reportNumber={selectedReport.report_number}
-                  selectedDoctors={selectedReport.doctor_name ? [{
-                    id: selectedReport.doctor_id,
-                    name: selectedReport.doctor_name,
-                    qualifications: selectedReport.qualifications,
-                    designation: selectedReport.designation
-                  }] : undefined}
+                  selectedDoctors={selectedReport.selected_doctors}
                 />
               </div>
             </div>
@@ -389,12 +372,7 @@ export default function ReportsPage() {
             images={mapImagesForPreview(downloadingReport.images)}
             prefix={downloadingReport.patient_prefix}
             reportNumber={downloadingReport.report_number}
-            selectedDoctors={downloadingReport.doctor_name ? [{
-              id: downloadingReport.doctor_id,
-              name: downloadingReport.doctor_name,
-              qualifications: downloadingReport.qualifications,
-              designation: downloadingReport.designation
-            }] : undefined}
+            selectedDoctors={downloadingReport.selected_doctors}
           />
         </div>
       )}

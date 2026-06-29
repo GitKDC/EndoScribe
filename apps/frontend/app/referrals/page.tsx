@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { Card } from "@/components/ui/Card";
+import { Table, TableRow, TableCell } from "@/components/ui/Table";
+import { Button } from "@/components/ui/Button";
 import { format } from "date-fns";
 import ReferralForm from "../../components/ReferralForm";
+import GoogleSyncModal from "../../components/GoogleSyncModal";
+import { FiRefreshCw } from "react-icons/fi";
 
 export default function ReferralsPage() {
   const [referrals, setReferrals] = useState<any[]>([]);
@@ -18,6 +23,7 @@ export default function ReferralsPage() {
 
   // Modals state
   const [showForm, setShowForm] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [editReferral, setEditReferral] = useState<any>(null);
 
   const fetchReferrals = async () => {
@@ -59,18 +65,21 @@ export default function ReferralsPage() {
           <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", margin: 0 }}>Referral Doctors</h2>
           <p style={{ color: "#64748b", margin: "4px 0 0 0", fontSize: "14px" }}>Manage referral doctors for automated WhatsApp messaging</p>
         </div>
-        <button 
-          onClick={() => { setEditReferral(null); setShowForm(true); }}
-          style={{
-            padding: "10px 20px", background: "#0d9488", color: "white",
-            border: "none", borderRadius: "8px", cursor: "pointer",
-            fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-        >
-          + Add Doctor
-        </button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <Button 
+            variant="secondary"
+            icon={<FiRefreshCw />}
+            onClick={() => setShowSyncModal(true)}
+          >
+            Sync Google Contacts
+          </Button>
+          <Button 
+            icon={<FiPlus />}
+            onClick={() => { setEditReferral(null); setShowForm(true); }}
+          >
+            Add Doctor
+          </Button>
+        </div>
       </div>
 
       {/* FILTER BAR */}
@@ -94,52 +103,42 @@ export default function ReferralsPage() {
       </div>
 
       {/* TABLE */}
-      <div style={{ background: "white", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-          <thead>
-            <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Name</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Phone</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Clinic/Hospital</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>City</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>Referrals</th>
-              <th style={{ padding: "16px 24px", color: "#475569", fontSize: "12px", fontWeight: "700", textTransform: "uppercase", textAlign: "center" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card style={{ overflowX: "auto" }}>
+        <Table headers={["Name", "Phone", "Clinic/Hospital", "City", "Referrals", "Actions"]}>
             {loading ? (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading doctors...</td></tr>
+              <TableRow><TableCell colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading doctors...</TableCell></TableRow>
             ) : referrals.length === 0 ? (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>No referral doctors found</td></tr>
+              <TableRow><TableCell colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>No referral doctors found</TableCell></TableRow>
             ) : (
               referrals.map(r => (
-                <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "16px 24px", fontWeight: "600", color: "#1e293b" }}>{r.name}</td>
-                  <td style={{ padding: "16px 24px", color: "#64748b" }}>{r.phone || "-"}</td>
-                  <td style={{ padding: "16px 24px", color: "#64748b" }}>{r.clinic_name || "-"}</td>
-                  <td style={{ padding: "16px 24px", color: "#64748b" }}>{r.city || "-"}</td>
-                  <td style={{ padding: "16px 24px", fontWeight: "600", color: "#0d9488" }}>{r.referred_count || 0}</td>
-                  <td style={{ padding: "16px 24px", textAlign: "center", display: "flex", justifyContent: "center", gap: "8px" }}>
-                    <button 
-                      onClick={() => { setEditReferral(r); setShowForm(true); }}
-                      style={{ padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer", background: "white", border: "1px solid #ccc", borderRadius: "6px" }}
-                    >Edit</button>
-                    <button 
-                      onClick={async () => {
-                        if (confirm("Delete this doctor?")) {
-                          await (window as any).api.deleteReferral(r.id);
-                          fetchReferrals();
-                        }
-                      }}
-                      style={{ padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer", background: "#fee2e2", color: "#ef4444", border: "1px solid #fecaca", borderRadius: "6px" }}
-                    >Delete</button>
-                  </td>
-                </tr>
+                <TableRow key={r.id}>
+                  <TableCell style={{ fontWeight: "600", color: "#1e293b" }}>{r.name}</TableCell>
+                  <TableCell>{r.phone || "-"}</TableCell>
+                  <TableCell>{r.clinic_name || "-"}</TableCell>
+                  <TableCell>{r.city || "-"}</TableCell>
+                  <TableCell style={{ fontWeight: "600", color: "#0d9488" }}>{r.referred_count || 0}</TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    <div style={{ display: "flex", gap: "8px", marginLeft: "-8px" }}>
+                      <Button 
+                        variant="icon" size="sm" icon={<FiEdit2 size={16} />}
+                        onClick={() => { setEditReferral(r); setShowForm(true); }}
+                      />
+                      <Button 
+                        variant="icon-danger" size="sm" icon={<FiTrash2 size={16} />}
+                        onClick={async () => {
+                          if (confirm("Delete this doctor?")) {
+                            await (window as any).api.deleteReferral(r.id);
+                            fetchReferrals();
+                          }
+                        }}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+        </Table>
+      </Card>
 
       {/* PAGINATION */}
       {!loading && total > 0 && (
@@ -174,7 +173,17 @@ export default function ReferralsPage() {
         <ReferralForm 
           initialData={editReferral} 
           onClose={() => setShowForm(false)} 
-          onSave={() => { setShowForm(false); fetchReferrals(); }} 
+          onSave={() => {
+            setShowForm(false);
+            fetchReferrals();
+          }} 
+        />
+      )}
+
+      {showSyncModal && (
+        <GoogleSyncModal
+          onClose={() => setShowSyncModal(false)}
+          onSuccess={() => fetchReferrals()}
         />
       )}
     </div>

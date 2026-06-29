@@ -36,6 +36,7 @@ type ImageData = {
   url: string;
   label: string;
   filePath?: string;
+  nbiLabel?: string;
 };
 
 type ActionState = "idle" | "loading" | "success" | "error";
@@ -99,6 +100,10 @@ function CreateReportInner() {
   // ── Referral Doctor ─────────────────────────────────────────────────────────
   const [referralName, setReferralName] = useState("");
   const [referralId, setReferralId] = useState<number | null>(null);
+
+  // ── Master Image Adjustments ────────────────────────────────────────────────
+  const [masterBrightness, setMasterBrightness] = useState(70);
+  const [masterContrast, setMasterContrast] = useState(70);
 
   // 🔥 NEW: doctors selected for this report's footer
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -303,10 +308,11 @@ function CreateReportInner() {
           patientPrefix: prefix,
           patientName,
           patientPhone,
-          patientAge: patientAge ? parseInt(patientAge) : null,
+          age: patientAge ? parseInt(patientAge) : null,
           patientCity,
           gender:   patientAge?.includes("/F") ? "F" : "M",
           doctorId: primaryDoctorId,
+          doctorIds: selectedDoctorIds,
           referralDoctorId: referralId,
           referralDoctorName: referralName,
           reportType,
@@ -314,6 +320,9 @@ function CreateReportInner() {
           images: images.map((img, i) => ({
             filePath: img.filePath,
             position: i,
+            nbiLabel: img.nbiLabel || null,
+            brightness: masterBrightness,
+            contrast: masterContrast,
           })),
         });
         savedReportNo = saved?.reportNumber ?? null;
@@ -325,7 +334,10 @@ function CreateReportInner() {
     }
 
     // ── 2. Generate PDF (report number now visible in preview) ───────────────
-    await generatePDF(reportDate, patientName, patientAge, reportType, savedReportNo ?? undefined);
+    const result = await generatePDF(reportDate, patientName, patientAge, reportType, savedReportNo ?? undefined);
+    if (result && result.absolutePath) {
+      alert(`PDF saved successfully to:\n${result.absolutePath}`);
+    }
   }, reportNumber ? `Report ${reportNumber} — PDF downloaded ✓` : "PDF downloaded ✓", "PDF failed");
   };
 
@@ -508,7 +520,37 @@ function CreateReportInner() {
             />
 
             {/* Image uploader */}
-            <div style={{ marginTop: "18px" }}>
+            <div style={{ marginTop: "24px" }}>
+              <div style={{ background: "white", borderRadius: "12px", border: `1px solid #e2e8f0`, padding: "24px", marginBottom: "16px" }}>
+                <h3 style={{ margin: 0, fontSize: "15px", color: "#1a3a52", marginBottom: "16px" }}>Global Image Settings</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+                  <div>
+                    <label style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: "600", color: "#64748b", marginBottom: "8px" }}>
+                      Brightness: {masterBrightness}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0" max="200"
+                      value={masterBrightness}
+                      onChange={(e) => setMasterBrightness(parseInt(e.target.value))}
+                      style={{ width: "100%", accentColor: "#0d9488" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: "600", color: "#64748b", marginBottom: "8px" }}>
+                      Contrast: {masterContrast}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0" max="200"
+                      value={masterContrast}
+                      onChange={(e) => setMasterContrast(parseInt(e.target.value))}
+                      style={{ width: "100%", accentColor: "#0d9488" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <ImageUploader
                 images={images}
                 onImagesAdded={handleImagesAdded}
@@ -582,6 +624,7 @@ function CreateReportInner() {
                 zoom: 0.75,
               }}
             >
+              <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
               <ReportPreview
                 patientName={patientName}
                 patientAge={patientAge}
@@ -589,11 +632,12 @@ function CreateReportInner() {
                 reportType={reportType}
                 sections={sections}
                 doctorName={doctorName}
-                images={images}
+                images={images.map(img => ({ ...img, brightness: masterBrightness, contrast: masterContrast }))}
                 prefix={prefix}
+                reportNumber={reportNumber || "PREVIEW"}
                 selectedDoctors={selectedDoctorObjects}
-                reportNumber={reportNumber ?? undefined}
               />
+            </div>
             </div>
           </div>
 

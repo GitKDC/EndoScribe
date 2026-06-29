@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS patients (
   phone TEXT,
   age INTEGER,
   gender TEXT,
+  city TEXT,
+  procedure_type TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

@@ -4,12 +4,12 @@ const patientRepo = {
   // Create a new patient
   createPatient: (data) => {
     return new Promise((resolve, reject) => {
-      const { name, phone, age, gender, city } = data;
+      const { name, phone, age, gender, city, procedure_type } = data;
       const query = `
-        INSERT INTO patients (name, phone, age, gender, city)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO patients (name, phone, age, gender, city, procedure_type)
+        VALUES (?, ?, ?, ?, ?, ?)
       `;
-      db.run(query, [name, phone, age, gender, city || null], function (err) {
+      db.run(query, [name, phone, age, gender, city || null, procedure_type || null], function (err) {
         if (err) return reject(err);
         resolve({ id: this.lastID, ...data });
       });
@@ -45,7 +45,7 @@ const patientRepo = {
 
         let dataQuery = `
           SELECT 
-            p.id, p.name, p.phone, p.age, p.gender, p.city, p.created_at,
+            p.id, p.name, p.phone, p.age, p.gender, p.city, p.procedure_type, p.created_at,
             (SELECT COUNT(*) FROM reports r WHERE r.patient_id = p.id) as report_count,
             (SELECT MAX(created_at) FROM reports r WHERE r.patient_id = p.id) as last_visit
           ${baseQuery}
@@ -64,7 +64,7 @@ const patientRepo = {
   // Get a specific patient, along with their reports
   getPatient: (id) => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM patients WHERE id = ?`;
+      const query = `SELECT id, name, phone, age, gender, city, procedure_type, created_at, updated_at FROM patients WHERE id = ?`;
       db.get(query, [id], (err, patient) => {
         if (err) return reject(err);
         if (!patient) return resolve(null);
@@ -88,13 +88,13 @@ const patientRepo = {
   // Update a patient
   updatePatient: (id, data) => {
     return new Promise((resolve, reject) => {
-      const { name, phone, age, gender, city } = data;
+      const { name, phone, age, gender, city, procedure_type } = data;
       const query = `
         UPDATE patients 
-        SET name = ?, phone = ?, age = ?, gender = ?, city = ?, updated_at = CURRENT_TIMESTAMP
+        SET name = ?, phone = ?, age = ?, gender = ?, city = ?, procedure_type = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `;
-      db.run(query, [name, phone, age, gender, city || null, id], function (err) {
+      db.run(query, [name, phone, age, gender, city || null, procedure_type || null, id], function (err) {
         if (err) return reject(err);
         resolve({ changes: this.changes });
       });

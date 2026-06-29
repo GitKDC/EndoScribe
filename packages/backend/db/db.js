@@ -62,6 +62,7 @@ if (fs.existsSync(migrationPath)) {
       db.run("ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id)", () => {});
       db.run("ALTER TABLE reports ADD COLUMN referral_doctor_id INTEGER REFERENCES referral_doctors(id)", () => {});
       db.run("ALTER TABLE patients ADD COLUMN city TEXT", () => {});
+      db.run("ALTER TABLE patients ADD COLUMN procedure_type TEXT", () => {});
       
       // Cloud sync columns
       const tables = ['reports', 'patients', 'images', 'referral_doctors', 'doctors', 'templates'];

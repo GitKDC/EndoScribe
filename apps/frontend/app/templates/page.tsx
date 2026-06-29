@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiTrash2, FiSettings, FiPlus, FiFolder, FiChevronDown, FiX } from "react-icons/fi";
+import { Button } from "@/components/ui/Button";
 
 const THEME = {
   navy:    "#1a3a52",
@@ -247,7 +248,7 @@ export default function TemplatePage() {
               fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
               transition: "background 0.1s"
             }}>
-              ⚙️ Manage Categories
+              <FiSettings /> Manage Categories
             </button>
             <button onClick={openCreate} style={{
               padding: "10px 22px", background: THEME.teal, color: "white",
@@ -259,7 +260,7 @@ export default function TemplatePage() {
             onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
             onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
             >
-              + New Template
+              <FiPlus /> New Template
             </button>
           </div>
         </div>
@@ -305,7 +306,7 @@ export default function TemplatePage() {
               textAlign: "center", padding: "60px", color: THEME.muted,
               background: THEME.white, borderRadius: "14px", border: `1px solid ${THEME.border}`,
             }}>
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>🗂️</div>
+              <div style={{ fontSize: "40px", marginBottom: "12px", color: THEME.muted }}><FiFolder /></div>
               <div style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px" }}>No templates found</div>
               <div style={{ fontSize: "13px" }}>Try changing the filter or creating a new template.</div>
             </div>
@@ -332,17 +333,9 @@ export default function TemplatePage() {
                           {t.category}
                         </span>
                       </div>
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button onClick={() => openEdit(t)} style={{
-                          padding: "5px 11px", border: `1px solid ${THEME.border}`,
-                          borderRadius: "6px", background: "white", cursor: "pointer",
-                          fontSize: "12px", fontWeight: "600", color: THEME.navy, fontFamily: "inherit",
-                        }}>Edit</button>
-                        <button onClick={() => setDelConfirm(t.id)} style={{
-                          padding: "5px 11px", border: `1px solid #fecaca`,
-                          borderRadius: "6px", background: THEME.dangerBg, cursor: "pointer",
-                          fontSize: "12px", fontWeight: "600", color: THEME.danger, fontFamily: "inherit",
-                        }}>Delete</button>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <Button variant="icon" size="sm" icon={<FiEdit2 size={16} />} onClick={() => openEdit(t)} />
+                        <Button variant="icon-danger" size="sm" icon={<FiTrash2 size={16} />} onClick={() => setDelConfirm(t.id)} />
                       </div>
                     </div>
 
@@ -370,7 +363,7 @@ export default function TemplatePage() {
             fontFamily: "Inter, sans-serif", maxWidth: "380px", width: "90%",
             boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
           }}>
-            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px" }}>🗑️</div>
+            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px", color: THEME.danger }}><FiTrash2 /></div>
             <h3 style={{ margin: "0 0 8px", textAlign: "center", color: THEME.text }}>Delete Template?</h3>
             <p style={{ margin: "0 0 20px", textAlign: "center", color: THEME.muted, fontSize: "13px" }}>
               This cannot be undone.
@@ -402,7 +395,7 @@ export default function TemplatePage() {
             fontFamily: "Inter, sans-serif", maxWidth: "380px", width: "90%",
             boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
           }}>
-            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px" }}>🗑️</div>
+            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px", color: THEME.danger }}><FiTrash2 /></div>
             <h3 style={{ margin: "0 0 8px", textAlign: "center", color: THEME.text }}>Delete Category?</h3>
             <p style={{ margin: "0 0 20px", textAlign: "center", color: THEME.muted, fontSize: "13px" }}>
               This cannot be undone. Templates using this category might lose their grouping.
@@ -443,15 +436,15 @@ export default function TemplatePage() {
               borderRadius: "16px 16px 0 0", borderBottom: `1px solid ${THEME.border}`,
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
-              <h2 style={{ margin: 0, fontSize: "17px", fontWeight: "700" }}>
-                {editTarget ? "✏️ Edit Template" : "➕ New Template"}
+              <h2 style={{ margin: 0, fontSize: "17px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
+                {editTarget ? <><FiEdit2 /> Edit Template</> : <><FiPlus /> New Template</>}
               </h2>
               <button onClick={() => setShowModal(false)} style={{
                 background: "transparent", border: "none",
                 color: THEME.muted, width: "30px", height: "30px",
                 borderRadius: "50%", cursor: "pointer", fontSize: "22px",
                 display: "flex", alignItems: "center", justifyContent: "center",
-              }}>×</button>
+              }}><FiX size={20} /></button>
             </div>
 
             <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -471,17 +464,22 @@ export default function TemplatePage() {
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: THEME.muted, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                     Category
                   </label>
-                  <select 
-                    value={fCat} 
-                    onChange={e => {
-                      setFCat(e.target.value);
-                      const c = categories.find(x => x.name === e.target.value);
-                      if (c && !editTarget) setFSections([...c.default_sections]); // Auto-fill default sections if new
-                    }} 
-                    style={{ ...inp, width: "160px" }}
-                  >
-                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <select 
+                      value={fCat} 
+                      onChange={e => {
+                        setFCat(e.target.value);
+                        const c = categories.find(x => x.name === e.target.value);
+                        if (c && !editTarget) setFSections([...c.default_sections]); // Auto-fill default sections if new
+                      }} 
+                      style={{ ...inp, width: "160px", appearance: "none", paddingRight: "28px" }}
+                    >
+                      {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    </select>
+                    <div style={{ position: "absolute", right: "10px", pointerEvents: "none", color: THEME.muted, display: "flex" }}>
+                      <FiChevronDown size={14} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -619,12 +617,12 @@ export default function TemplatePage() {
                 padding: "20px 24px", borderBottom: `1px solid ${THEME.border}`,
                 display: "flex", alignItems: "center", justifyContent: "space-between",
               }}>
-                <h2 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: THEME.navy }}>
-                  {editCatTarget ? "✏️ Edit Category" : "➕ New Category"}
+                <h2 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: THEME.navy, display: "flex", alignItems: "center", gap: "8px" }}>
+                  {editCatTarget ? <><FiEdit2 /> Edit Category</> : <><FiPlus /> New Category</>}
                 </h2>
                 <button onClick={() => setShowCatModal(false)} style={{
                   background: "transparent", border: "none", color: THEME.muted, cursor: "pointer", fontSize: "22px"
-                }}>×</button>
+                }}><FiX size={20} /></button>
               </div>
 
               <div style={{ padding: "24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", flex: 1 }}>

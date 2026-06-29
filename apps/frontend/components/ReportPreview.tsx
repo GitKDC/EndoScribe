@@ -193,40 +193,29 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           flex: 1,
           minHeight: 0,
           display: "flex",
-          gap: "16px",
+          flexDirection: "column",
           padding: "12px 24px 0 44px", // Increased left padding for hole punching
           overflow: "hidden",
         }}
       >
-        {/* ── LEFT: patient row + title + text + bottom images ────────── */}
+        {/* Patient row (Full Width) */}
         <div
           style={{
-            flex: "1 1 57%",
+            flexShrink: 0,
             display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            fontSize: bodyFont,
-            lineHeight: lineH,
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "8px",
+            paddingBottom: "6px",
+            borderBottom: "1.5px solid #ddd",
           }}
         >
-          {/* Patient row */}
-          <div
-            style={{
-              flexShrink: 0,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "8px",
-              paddingBottom: "6px",
-              borderBottom: "1.5px solid #ddd",
-            }}
-          >
-            <p style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>
-              {patientName
-                ? `${prefix} ${patientName} - ${patientAge}`
-                : "Patient Name"}
-            </p>
-            {/* Report number shown after PDF is saved */}
+          <p style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>
+            {patientName
+              ? `${prefix} ${patientName} - ${patientAge}`
+              : "Patient Name"}
+          </p>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             {reportNumber && (
               <p style={{
                 margin: 0, fontSize: "12px", fontWeight: "600",
@@ -238,9 +227,31 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 Ref: {reportNumber}
               </p>
             )}
+            <p style={{
+              margin: 0, fontSize: "12px", fontWeight: "700",
+              color: "#333", border: "1px solid #999",
+              padding: "2px 8px", borderRadius: "3px",
+              whiteSpace: "nowrap",
+            }}>
+              {formatDate(reportDate)}
+            </p>
           </div>
+        </div>
 
-          {/* Report title */}
+        {/* Content split (Left / Right) */}
+        <div style={{ display: "flex", gap: "16px", flex: 1, minHeight: 0, overflow: "hidden" }}>
+          {/* ── LEFT: title + text + bottom images ────────── */}
+          <div
+            style={{
+              flex: "1 1 57%",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              fontSize: bodyFont,
+              lineHeight: lineH,
+            }}
+          >
+            {/* Report title */}
           <div style={{ flexShrink: 0, marginBottom: "10px" }}>
             <h2
               style={{
@@ -374,30 +385,6 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               marginBottom: "16px",
             }}
           >
-            <div
-              style={{
-                flexShrink: 0,
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-                marginBottom: "8px",
-                paddingBottom: "6px",
-                borderBottom: "1.5px solid #ddd",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  border: "1px solid #999",
-                  padding: "2px 10px",
-                }}
-              >
-                {formatDate(reportDate)}
-              </p>
-            </div>
-
             {rightImages.map((img) => (
               <div
                 key={img.id}
@@ -428,6 +415,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}

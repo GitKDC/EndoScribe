@@ -346,11 +346,16 @@ const ReportForm: React.FC<ReportFormProps> = ({
                               onPatientNameChange(p.name);
                               onPatientPhoneChange(p.phone || "");
                               if (onPatientIdChange) onPatientIdChange(p.id);
+                              if (p.city && onPatientCityChange) onPatientCityChange(p.city);
                               
                               setPrefix(p.gender === "M" ? "Mr." : "Mrs.");
                               setAge(p.age ? String(p.age) : "");
                               setGender(p.gender || "M");
                               onPatientAgeChange(`${p.age || ""}Yrs/${p.gender || "M"}`);
+
+                              if (p.procedure_type) {
+                                onReportTypeChange(p.procedure_type);
+                              }
                               
                               setShowPatientSugs(false);
                             }}
@@ -536,6 +541,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
             </div>
           </div>
         </div>
+
 
         {/* ── Report Details ────────────────────────── */}
         <div style={card}>

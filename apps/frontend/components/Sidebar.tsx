@@ -123,17 +123,36 @@ export default function Sidebar() {
         </nav>
 
         {/* ── Footer ──────────────────────────────────────────── */}
-        <div style={{
-          padding: "14px 18px",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-          fontSize: "11px",
-          color: "rgba(255, 255, 255, 0.91)",
-          lineHeight: 1.5,
-        }}>
-          <div style={{ fontWeight: "600", color: "rgba(255, 255, 255, 0.87)", marginBottom: "2px" }}>
-            Dr Hrushikesh P. Chaudhari
+        <div 
+          onClick={() => router.push("/profile")}
+          style={{
+            padding: "16px",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            cursor: "pointer",
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+        >
+          <div style={{
+            width: "36px", height: "36px", borderRadius: "50%",
+            background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "14px", fontWeight: "bold", color: "white", flexShrink: 0
+          }}>
+            HC
           </div>
-          Consultant Gastroenterologist
+          <div style={{ flex: 1, overflow: "hidden" }}>
+            <div style={{ fontWeight: "600", color: "rgba(255, 255, 255, 0.95)", fontSize: "13px", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+              Dr. Hrushikesh
+            </div>
+            <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.7)", marginTop: "2px", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+              Gastroenterologist
+            </div>
+          </div>
         </div>
       </div>
     </>

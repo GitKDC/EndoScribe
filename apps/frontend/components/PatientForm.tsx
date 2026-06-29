@@ -12,6 +12,7 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
   const [age, setAge] = useState<number | string>(initialData?.age || "");
   const [gender, setGender] = useState(initialData?.gender || "M");
   const [city, setCity] = useState(initialData?.city || "");
+  const [procedureType, setProcedureType] = useState(initialData?.procedure_type || "");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,7 +25,7 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
     
     setSaving(true);
     try {
-      const data = { name, phone, age: Number(age) || null, gender, city };
+      const data = { name, phone, age: Number(age) || null, gender, city, procedure_type: procedureType };
       if (initialData?.id) {
         await (window as any).api.updatePatient(initialData.id, data);
       } else {
@@ -96,9 +97,23 @@ export default function PatientForm({ initialData, onClose, onSave }: PatientFor
             </div>
           </div>
           
-          <div style={{ marginBottom: "24px" }}>
-            <label style={lbl}>City</label>
-            <input value={city} onChange={e => setCity(e.target.value)} style={inp} placeholder="e.g. Jalgaon" />
+          <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>City</label>
+              <input value={city} onChange={e => setCity(e.target.value)} style={inp} placeholder="e.g. Jalgaon" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Procedure Type</label>
+              <select value={procedureType} onChange={e => setProcedureType(e.target.value)} style={inp}>
+                <option value="">Select Procedure</option>
+                <option value="UGI">UGI</option>
+                <option value="VLS">VLS</option>
+                <option value="SIGMOIDOSCOPY">SIGMOIDOSCOPY</option>
+                <option value="COLONOSCOPY">COLONOSCOPY</option>
+                <option value="ERCP">ERCP</option>
+                <option value="ENTEROSCOPY">ENTEROSCOPY</option>
+              </select>
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>

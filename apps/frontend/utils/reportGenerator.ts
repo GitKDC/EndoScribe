@@ -100,8 +100,8 @@ const inlineBlobImages = async (element: HTMLElement): Promise<void> => {
     imgs.map(async (img) => {
       let src = img.getAttribute("src") || "";
 
-      // STEP 1: Convert blob/http → base64 (ONLY ONCE)
-      if (src.startsWith("blob:") || src.startsWith("http")) {
+      // STEP 1: Convert blob/http/endo → base64 (ONLY ONCE)
+      if (src.startsWith("blob:") || src.startsWith("http") || src.startsWith("endo:")) {
         try {
           const resp = await fetch(src);
           const blob = await resp.blob();
@@ -187,7 +187,7 @@ const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
 };
 
 // ── PDF ────────────────────────────────────────────────────────────────────────
-export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string): Promise<void> => {
+export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string, downloadToDownloads = false): Promise<any> => {
   const canvas = await captureReport(3);
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -197,12 +197,18 @@ export const generatePDF = async (reportDate: string, patientName: string, patie
 
   const filename = `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.pdf`;
   
+  // If downloadToDownloads is true, bypass backend storage and trigger a direct browser download
+  if (downloadToDownloads) {
+    pdf.save(filename);
+    return { success: true, isBrowserDownload: true };
+  }
+  
   // If running inside electron, send to backend to save in configured reports directory
   if (typeof window !== "undefined" && (window as any).api && (window as any).api.saveReportPdf) {
     const pdfDataUri = pdf.output("datauristring");
     const base64Data = pdfDataUri.split(",")[1];
     
-    await (window as any).api.saveReportPdf({
+    return await (window as any).api.saveReportPdf({
       reportNumber,
       base64Data,
       filename
@@ -210,6 +216,7 @@ export const generatePDF = async (reportDate: string, patientName: string, patie
   } else {
     // Fallback to browser download
     pdf.save(filename);
+    return { success: true, isBrowserDownload: true };
   }
 };
 

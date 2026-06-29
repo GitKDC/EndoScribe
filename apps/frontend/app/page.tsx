@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { 
   FiEdit, FiSave, FiFileText, FiCalendar, 
   FiUsers, FiFolder, FiHardDrive, FiActivity,
-  FiUserPlus
+  FiUserPlus, FiEdit2, FiTrash2
 } from "react-icons/fi";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 const THEME = {
   navy:    "#1a3a52",
@@ -80,10 +82,11 @@ export default function Dashboard() {
   }, []);
 
   const loadDoctors = async () => {
+    if (!(window as any).api) return;
     try {
-      const data = await (window as any).api.getDoctors();
-      setDoctors(data || []);
-    } catch (err) {   
+      const docs = await (window as any).api.getDoctors();
+      setDoctors(docs);
+    } catch (err) {
       console.error("Failed to load doctors:", err);
     }
   };
@@ -93,71 +96,16 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const openAddDoctor = () => {
-    setEditDoc(null);
-    setFName(""); setFQual(""); setFDesig(""); setFDefault(true);
-    setShowDocModal(true);
-  };
-
-  const openEditDoctor = (d: Doctor) => {
-    setEditDoc(d);
-    setFName(d.name);
-    setFQual(d.qualifications || "");
-    setFDesig(d.designation || "");
-    setFDefault(!!d.is_default);
-    setShowDocModal(true);
-  };
-
-  const saveDoctor = async () => {
-    if (!fName.trim()) return showToast("Doctor name is required", false);
-    const payload = {
-      name: fName.trim(),
-      qualifications: fQual.trim(),
-      designation: fDesig.trim(),
-      is_default: fDefault ? 1 : 0,
-      display_order: editDoc?.display_order ?? doctors.length + 1,
-    };
-    try {
-      if (editDoc) {
-        await (window as any).api.updateDoctor(editDoc.id, payload);
-        showToast("Doctor updated ✓");
-      } else {
-        await (window as any).api.createDoctor(payload);
-        showToast("Doctor added ✓");
-      }
-      setShowDocModal(false);
-      loadDoctors();
-    } catch {
-      showToast("Save failed", false);
-    }
-  };
-
-  const confirmDeleteDoctor = async (id: number) => {
-    try {
-      await (window as any).api.deleteDoctor(id);
-      setDelDocId(null);
-      showToast("Doctor removed");
-      loadDoctors();
-    } catch {
-      showToast("Delete failed", false);
-    }
-  };
-
   const timeStr = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   const dateOptions: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "long", year: "numeric" };
   const dateStr = time.toLocaleDateString("en-US", dateOptions);
-  const fullDateTimeStr = `${timeStr} | ${dateStr}`;
-
+  
   const greeting = () => {
     const h = time.getHours();
     if (h < 12) return "Good Morning";
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   };
-
-  const ugiCount  = templates.filter(t => t.category === "UGI").length;
-  const vlsCount  = templates.filter(t => t.category === "VLS").length;
-  const sigCount  = templates.filter(t => t.category === "SIGMOIDOSCOPY").length;
 
   // Quick links dynamically built from first 4 categories
   const QUICK = categories.slice(0, 4).map(c => ({
@@ -175,12 +123,6 @@ export default function Dashboard() {
     overflow: "hidden",
   };
 
-  const inp: React.CSSProperties = {
-    padding: "9px 12px", border: `1.5px solid ${THEME.border}`,
-    borderRadius: "7px", fontSize: "13px", fontFamily: "inherit",
-    outline: "none", width: "100%", boxSizing: "border-box", background: THEME.white,
-  };
-
   return (
     <>
       <style>{`
@@ -189,8 +131,6 @@ export default function Dashboard() {
         .dash-quick:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
         .dash-quick { transition: transform 0.18s, box-shadow 0.18s; }
         .tpl-row:hover { background: #f8fafc !important; }
-        .doc-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08) !important; }
-        .doc-card { transition: box-shadow 0.18s; }
         input:focus, textarea:focus { border-color: #0d9488 !important; box-shadow: 0 0 0 3px rgba(13,148,136,0.15) !important; }
       `}</style>
 
@@ -330,78 +270,6 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* ── 🔥 NEW: Doctors section ───────────────────────── */}
-          <div style={{ ...card, padding: "22px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy, display: "flex", alignItems: "center" }}>
-                <FiUsers style={{ marginRight: "8px" }} /> Doctors
-              </h3>
-              <button onClick={openAddDoctor} style={{
-                padding: "7px 16px", background: THEME.teal, color: "white",
-                border: "none", borderRadius: "7px", fontSize: "12.5px",
-                fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
-              }}>
-                + Add Doctor
-              </button>
-            </div>
-
-            {doctors.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "28px", color: THEME.muted, fontSize: "13px" }}>
-                No doctors added yet.
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px" }}>
-                {doctors.map((d) => (
-                  <div key={d.id} className="doc-card" style={{
-                    border: `1px solid ${THEME.border}`,
-                    borderRadius: "10px",
-                    padding: "14px 16px",
-                    background: "#fafbfc",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                      <div>
-                        <div style={{ fontSize: "13.5px", fontWeight: "700", color: THEME.text }}>
-                          {d.name}
-                        </div>
-                        {d.qualifications && (
-                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "3px" }}>
-                            {d.qualifications}
-                          </div>
-                        )}
-                        {d.designation && (
-                          <div style={{ fontSize: "11.5px", color: THEME.muted, marginTop: "1px" }}>
-                            {d.designation}
-                          </div>
-                        )}
-                        {!!d.is_default && (
-                          <span style={{
-                            display: "inline-block", marginTop: "6px",
-                            fontSize: "10px", fontWeight: "700", color: THEME.teal,
-                            background: THEME.tealBg, padding: "2px 8px", borderRadius: "20px",
-                          }}>
-                            Default on new reports
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                        <button onClick={() => openEditDoctor(d)} style={{
-                          padding: "4px 9px", border: `1px solid ${THEME.border}`,
-                          borderRadius: "6px", background: "white", cursor: "pointer",
-                          fontSize: "11px", fontWeight: "600", color: THEME.navy, fontFamily: "inherit",
-                        }}>Edit</button>
-                        <button onClick={() => setDelDocId(d.id)} style={{
-                          padding: "4px 9px", border: "1px solid #fecaca",
-                          borderRadius: "6px", background: THEME.dangerBg, cursor: "pointer",
-                          fontSize: "11px", fontWeight: "600", color: THEME.danger, fontFamily: "inherit",
-                        }}>Delete</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* ── Quick start + template list ───────────────────── */}
@@ -545,119 +413,8 @@ export default function Dashboard() {
               Try now
             </button>
           </div>
-
         </div>
       </div>
-
-      {/* ── Delete confirm ─────────────────────────────────── */}
-      {delDocId !== null && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-          zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{
-            background: THEME.white, borderRadius: "14px", padding: "28px 32px",
-            fontFamily: "Inter, sans-serif", maxWidth: "380px", width: "90%",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-          }}>
-            <div style={{ fontSize: "32px", textAlign: "center", marginBottom: "12px" }}>🗑️</div>
-            <h3 style={{ margin: "0 0 8px", textAlign: "center", color: THEME.text }}>Remove Doctor?</h3>
-            <p style={{ margin: "0 0 20px", textAlign: "center", color: THEME.muted, fontSize: "13px" }}>
-              They will no longer appear in the doctor selector for new reports.
-            </p>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDelDocId(null)} style={{
-                flex: 1, padding: "10px", border: `1.5px solid ${THEME.border}`,
-                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                fontSize: "14px", fontWeight: "600", background: "white", color: THEME.text,
-              }}>Cancel</button>
-              <button onClick={() => confirmDeleteDoctor(delDocId)} style={{
-                flex: 1, padding: "10px", border: "none",
-                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                fontSize: "14px", fontWeight: "600", background: THEME.danger, color: "white",
-              }}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Add / Edit Doctor Modal ───────────────────────── */}
-      {showDocModal && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
-          zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px",
-        }}>
-          <div style={{
-            background: THEME.white, borderRadius: "16px",
-            width: "100%", maxWidth: "440px",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
-            fontFamily: "Inter, sans-serif",
-          }}>
-            <div style={{
-              background: `linear-gradient(135deg, ${THEME.navyDark}, ${THEME.navy})`,
-              color: "white", padding: "18px 22px",
-              borderRadius: "16px 16px 0 0",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <h2 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>
-                {editDoc ? "✏️ Edit Doctor" : "➕ Add Doctor"}
-              </h2>
-              <button onClick={() => setShowDocModal(false)} style={{
-                background: "rgba(255,255,255,0.15)", border: "none",
-                color: "white", width: "28px", height: "28px",
-                borderRadius: "50%", cursor: "pointer", fontSize: "16px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>×</button>
-            </div>
-
-            <div style={{ padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: THEME.muted, marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Full Name *
-                </label>
-                <input value={fName} onChange={e => setFName(e.target.value)}
-                  placeholder="e.g. Dr Hrushikesh P. Chaudhari" style={inp} />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: THEME.muted, marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Qualifications
-                </label>
-                <input value={fQual} onChange={e => setFQual(e.target.value)}
-                  placeholder="e.g. DNB (Gen. Med.), DNB (Gastro.)" style={inp} />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: THEME.muted, marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Designation
-                </label>
-                <input value={fDesig} onChange={e => setFDesig(e.target.value)}
-                  placeholder="e.g. Consultant Gastroenterologist & Therapeutic Endoscopist" style={inp} />
-              </div>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: THEME.text, cursor: "pointer" }}>
-                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)}
-                  style={{ accentColor: THEME.teal, cursor: "pointer" }} />
-                Select by default on new reports
-              </label>
-
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", paddingTop: "6px" }}>
-                <button onClick={() => setShowDocModal(false)} style={{
-                  padding: "9px 20px", border: `1.5px solid ${THEME.border}`,
-                  borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: "13px", fontWeight: "600", background: "white", color: THEME.text,
-                }}>Cancel</button>
-                <button onClick={saveDoctor} style={{
-                  padding: "9px 24px", border: "none",
-                  borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: "13px", fontWeight: "600",
-                  background: THEME.teal, color: "white",
-                  boxShadow: "0 4px 12px rgba(13,148,136,0.3)",
-                }}>
-                  {editDoc ? "Save Changes" : "Add Doctor"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

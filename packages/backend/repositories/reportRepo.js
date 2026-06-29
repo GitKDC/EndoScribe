@@ -128,8 +128,8 @@ const saveReport = async (data) => {
     db.run(
       `INSERT INTO reports
        (report_number, patient_prefix, patient_name, age, gender,
-        doctor_id, template_id, report_type, sections, patient_id, referral_doctor_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        doctor_id, doctor_ids, template_id, report_type, sections, patient_id, referral_doctor_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         reportNumber,
         patientPrefix,
@@ -137,6 +137,7 @@ const saveReport = async (data) => {
         age,
         gender,
         doctorId || null,
+        data.doctorIds ? JSON.stringify(data.doctorIds) : null,
         templateId || null,
         reportType || "UPPER GI ENDOSCOPY",
         JSON.stringify(sections || []),
@@ -150,7 +151,7 @@ const saveReport = async (data) => {
 
         // SAVE IMAGES
         const stmt = db.prepare(
-          "INSERT INTO images (report_id, file_path, position) VALUES (?, ?, ?)"
+          "INSERT INTO images (report_id, file_path, position, nbi_label, brightness, contrast) VALUES (?, ?, ?, ?, ?, ?)"
         );
 
         images.forEach((img, index) => {
@@ -158,7 +159,7 @@ const saveReport = async (data) => {
 
           const finalPath = img.relativePath ? img.relativePath : img.filePath;
           if (finalPath && finalPath.trim() !== "") {
-            stmt.run(reportId, finalPath, index);
+            stmt.run(reportId, finalPath, index, img.nbiLabel || null, img.brightness ?? 70, img.contrast ?? 70);
           } else {
             console.warn("Skipping image (no valid path):", img);
           }
@@ -276,6 +277,8 @@ const getReport = (id) => {
         if (!row) return resolve(null);
         // parse JSON sections
         row.sections = row.sections ? JSON.parse(row.sections) : [];
+        let doctorIds = [];
+        try { doctorIds = row.doctor_ids ? JSON.parse(row.doctor_ids) : []; } catch (e) {}
 
         const { getStoragePaths } = require("../utils/appPaths");
         const path = require("path");
@@ -297,7 +300,26 @@ const getReport = (id) => {
               }
               return img;
             });
-            resolve(row);
+
+            if (doctorIds.length > 0) {
+              const placeholders = doctorIds.map(() => '?').join(',');
+              db.all(`SELECT id, name, qualifications, designation FROM doctors WHERE id IN (${placeholders})`, doctorIds, (err3, docs) => {
+                row.selected_doctors = docs || [];
+                resolve(row);
+              });
+            } else {
+              if (row.doctor_name) {
+                row.selected_doctors = [{
+                  id: row.doctor_id,
+                  name: row.doctor_name,
+                  qualifications: row.qualifications,
+                  designation: row.designation
+                }];
+              } else {
+                row.selected_doctors = [];
+              }
+              resolve(row);
+            }
           }
         );
       }
