@@ -107,30 +107,20 @@ export default function PatientsPage() {
           <p style={{ color: "#64748b", margin: "4px 0 0 0", fontSize: "14px" }}>Manage patient directory and their reports history</p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
-          <button 
+          <Button 
+            variant="secondary"
+            icon={<MdDownload size={18} />}
             onClick={handleExportCSV}
-            style={{
-              padding: "10px 20px", background: "#0ea5e9", color: "white", display: "flex", alignItems: "center", gap: "8px",
-              border: "none", borderRadius: "8px", cursor: "pointer",
-              fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           >
-            <MdDownload size={18} /> Export CSV
-          </button>
-          <button 
+            Export CSV
+          </Button>
+          <Button 
+            variant="primary"
+            icon={<FiUserPlus size={18} />}
             onClick={() => { setEditPatient(null); setShowForm(true); }}
-            style={{
-              padding: "10px 20px", background: "#0d9488", color: "white", display: "flex", alignItems: "center", gap: "8px",
-              border: "none", borderRadius: "8px", cursor: "pointer",
-              fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           >
-            <FiUserPlus size={18} /> Add Patient
-          </button>
+            Add Patient
+          </Button>
         </div>
       </div>
 
@@ -190,23 +180,25 @@ export default function PatientsPage() {
             Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} patients
           </span>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button 
+            <Button 
+              variant="secondary"
+              size="sm"
               disabled={page === 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
-              style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: page === 1 ? "#f8fafc" : "white", color: page === 1 ? "#94a3b8" : "#334155", cursor: page === 1 ? "not-allowed" : "pointer", fontWeight: "600", fontSize: "13px" }}
             >
               Previous
-            </button>
+            </Button>
             <span style={{ display: "flex", alignItems: "center", padding: "0 12px", fontSize: "14px", fontWeight: "600", color: "#334155" }}>
-              Page {page} of {totalPages}
+              Page {page} of {Math.ceil(total / limit) || 1}
             </span>
-            <button 
-              disabled={page === totalPages}
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: page === totalPages ? "#f8fafc" : "white", color: page === totalPages ? "#94a3b8" : "#334155", cursor: page === totalPages ? "not-allowed" : "pointer", fontWeight: "600", fontSize: "13px" }}
+            <Button 
+              variant="secondary"
+              size="sm"
+              disabled={page >= Math.ceil(total / limit)}
+              onClick={() => setPage(p => p + 1)}
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -138,7 +138,7 @@ const safeDate = (d: string) =>
  * Operates on a detached CLONE of #report-content so that baking filters /
  * inlining blob URLs never mutates the live, on-screen preview.
  */
-const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
+const captureReport = async (scale = 3, targetReportNumber?: string): Promise<HTMLCanvasElement> => {
   const source = document.getElementById("report-content");
   if (!source) throw new Error("Element #report-content not found in DOM.");
 
@@ -149,6 +149,13 @@ const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
   clone.style.left = "-99999px";
   clone.style.pointerEvents = "none";
   document.body.appendChild(clone);
+
+  if (targetReportNumber) {
+    const refEl = clone.querySelector("#report-number-display");
+    if (refEl) {
+      refEl.textContent = `Ref: ${targetReportNumber}`;
+    }
+  }
 
   try {
     // 1. Inline blob / external URLs + bake brightness/contrast filters
@@ -177,7 +184,7 @@ const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
         console.warn(`html2canvas OOM at scale ${scale}, retrying at ${scale - 1}…`);
         // Retry with a fresh clone at lower scale
         document.body.removeChild(clone);
-        return captureReport(scale - 1);
+        return captureReport(scale - 1, targetReportNumber);
       }
       throw err;
     }
@@ -188,7 +195,7 @@ const captureReport = async (scale = 3): Promise<HTMLCanvasElement> => {
 
 // ── PDF ────────────────────────────────────────────────────────────────────────
 export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string, downloadToDownloads = false): Promise<any> => {
-  const canvas = await captureReport(3);
+  const canvas = await captureReport(3, reportNumber);
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -261,14 +268,18 @@ ${cloned.outerHTML}
 };
 
 // ── PNG export ─────────────────────────────────────────────────────────────────
-export const exportAsImage = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string): Promise<void> => {
-  const canvas = await captureReport(3);
+export const exportAsImage = async (reportDate: string, patientName: string, ageGender: string, reportType: string, reportNumber?: string) => {
+  try {
+    const canvas = await captureReport(3, reportNumber);
+    const filename = `${formatFileName(patientName, reportType, reportDate, ageGender, reportNumber)}.png`;
 
-  const link    = document.createElement("a");
-  link.href     = canvas.toDataURL("image/png");
-  link.download =
-  `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.png`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    const link    = document.createElement("a");
+    link.href     = canvas.toDataURL("image/png");
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error("Export failed:", err);
+  }
 };

@@ -217,7 +217,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           </p>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             {reportNumber && (
-              <p style={{
+              <p id="report-number-display" style={{
                 margin: 0, fontSize: "12px", fontWeight: "600",
                 color: "#1a3a52", letterSpacing: "0.3px",
                 border: "1px solid #1a3a52",

@@ -150,18 +150,13 @@ export default function ReportsPage() {
     <div style={{ padding: "32px", fontFamily: "'Inter', sans-serif", backgroundColor: "#f4f7f6", minHeight: "100vh" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <h2 style={{ color: "#1a3a52", fontSize: "28px", fontWeight: "800", margin: 0 }}>Patient Reports</h2>
-        <button 
+        <Button 
+          variant="secondary"
+          icon={<MdDownload size={18} />}
           onClick={handleExportCSV}
-          style={{
-            padding: "10px 20px", background: "#0ea5e9", color: "white", display: "flex", alignItems: "center", gap: "8px",
-            border: "none", borderRadius: "8px", cursor: "pointer",
-            fontWeight: "600", fontSize: "14px", transition: "transform 0.1s"
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
         >
-          <MdDownload size={18} /> Export CSV
-        </button>
+          Export CSV
+        </Button>
       </div>
 
       {/* FILTERS */}
@@ -275,30 +270,23 @@ export default function ReportsPage() {
           <span style={{ fontSize: "14px", color: "#666", fontWeight: "500" }}>
             Showing <strong style={{ color: "#111" }}>{(page - 1) * 10 + 1}</strong> to <strong style={{ color: "#111" }}>{Math.min(page * 10, totalItems)}</strong> of <strong style={{ color: "#111" }}>{totalItems}</strong> entries
           </span>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button 
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Button 
+              variant="secondary"
+              size="sm"
               disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              style={{ 
-                padding: "8px 18px", border: "1px solid #ddd", background: "white", borderRadius: "6px", 
-                cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.5 : 1,
-                fontSize: "14px", fontWeight: "600", color: "#333", boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
-              }}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
             >
               Previous
-            </button>
-            <button 
+            </Button>
+            <Button 
+              variant="secondary"
+              size="sm"
               disabled={page === totalPages || totalPages === 0}
               onClick={() => setPage(p => p + 1)}
-              style={{ 
-                padding: "8px 18px", border: "1px solid #ddd", background: "white", borderRadius: "6px", 
-                cursor: (page === totalPages || totalPages === 0) ? "not-allowed" : "pointer", 
-                opacity: (page === totalPages || totalPages === 0) ? 0.5 : 1,
-                fontSize: "14px", fontWeight: "600", color: "#333", boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
-              }}
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}

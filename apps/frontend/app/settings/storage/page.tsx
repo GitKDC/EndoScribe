@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { FiFolder, FiHardDrive, FiShield, FiRefreshCw, FiDatabase, FiCloud, FiTrash2, FiAlertTriangle } from "react-icons/fi";
+import { Button } from "@/components/ui/Button";
 
 const THEME = {
   navy: "#1a3a52",
@@ -250,12 +251,13 @@ export default function StorageSettingsPage() {
             <div style={{ flex: 1, padding: "10px 16px", background: THEME.bg, borderRadius: "8px", border: `1px solid ${THEME.border}`, fontSize: "13px", color: THEME.muted, wordBreak: "break-all" }}>
               {config?.storagePaths[key]}
             </div>
-            <button 
+            <Button 
+              variant="secondary"
               onClick={() => handleSelectFolder(key)}
-              style={{ padding: "8px 16px", background: THEME.white, border: `1px solid ${THEME.border}`, borderRadius: "8px", fontSize: "13px", fontWeight: "600", color: THEME.navy, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+              icon={<FiFolder />}
             >
-              <FiFolder /> Browse
-            </button>
+              Browse
+            </Button>
           </div>
         ))}
       </div>
@@ -265,27 +267,33 @@ export default function StorageSettingsPage() {
         <div style={cardStyle}>
           <h2 style={{ fontSize: "16px", fontWeight: "700", color: THEME.navy, marginTop: 0, marginBottom: "20px" }}>Data Maintenance</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <button 
+            <Button 
+              variant="secondary"
               onClick={handleVerify}
               disabled={saving}
-              style={{ width: "100%", padding: "12px", background: THEME.white, border: `1px solid ${THEME.border}`, borderRadius: "8px", fontSize: "14px", fontWeight: "600", color: THEME.navy, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              icon={<FiShield />}
+              style={{ width: "100%" }}
             >
-              <FiShield /> Verify Storage Integrity
-            </button>
-            <button 
+              Verify Storage Integrity
+            </Button>
+            <Button 
+              variant="secondary"
               onClick={handleOptimize}
               disabled={saving}
-              style={{ width: "100%", padding: "12px", background: THEME.white, border: `1px solid ${THEME.border}`, borderRadius: "8px", fontSize: "14px", fontWeight: "600", color: THEME.navy, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              icon={<FiRefreshCw />}
+              style={{ width: "100%" }}
             >
-              <FiRefreshCw /> Optimize Database (Vacuum)
-            </button>
-            <button 
+              Optimize Database (Vacuum)
+            </Button>
+            <Button 
+              variant="danger"
               onClick={startDeletionFlow}
               disabled={saving}
-              style={{ width: "100%", padding: "12px", background: THEME.dangerBg, border: `1px solid #fecaca`, borderRadius: "8px", fontSize: "14px", fontWeight: "600", color: THEME.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              icon={<FiTrash2 />}
+              style={{ width: "100%" }}
             >
-              <FiTrash2 /> Delete Data Older Than 3 Years
-            </button>
+              Delete Data Older Than 3 Years
+            </Button>
           </div>
         </div>
 
@@ -293,13 +301,15 @@ export default function StorageSettingsPage() {
         <div style={cardStyle}>
           <h2 style={{ fontSize: "16px", fontWeight: "700", color: THEME.navy, marginTop: 0, marginBottom: "20px" }}>Cloud Sync & Backups</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <button 
+            <Button 
+              variant="primary"
               onClick={handleBackup}
               disabled={backingUp}
-              style={{ width: "100%", padding: "12px", background: THEME.teal, border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "600", color: "white", cursor: backingUp ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 12px rgba(13,148,136,0.3)" }}
+              icon={<FiCloud />}
+              style={{ width: "100%" }}
             >
-              <FiCloud /> {backingUp ? "Creating Backup..." : "Create Local Backup (ZIP)"}
-            </button>
+              {backingUp ? "Creating Backup..." : "Create Local Backup (ZIP)"}
+            </Button>
             <div style={{ padding: "16px", background: THEME.bg, borderRadius: "8px", border: `1px dashed ${THEME.border}`, textAlign: "center", color: THEME.muted, fontSize: "13px" }}>
               <div style={{ fontWeight: "600", color: THEME.navy, marginBottom: "4px" }}>Cloud Synchronization</div>
               <div>Multi-device cloud syncing is currently disabled. Contact support to enable hospital network syncing.</div>
@@ -325,8 +335,8 @@ export default function StorageSettingsPage() {
                   <div style={{ fontSize: "14px", color: THEME.text, marginTop: "8px" }}><strong>Cutoff date:</strong> {deleteSummary?.date ? new Date(deleteSummary.date).toLocaleDateString() : '...'}</div>
                 </div>
                 <div style={{ display: "flex", gap: "12px" }}>
-                  <button onClick={() => setDeleteStep(0)} style={{ flex: 1, padding: "12px", border: `1.5px solid ${THEME.border}`, borderRadius: "8px", background: "white", color: THEME.text, fontWeight: "600", cursor: "pointer" }}>Cancel</button>
-                  <button onClick={() => setDeleteStep(2)} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: THEME.danger, color: "white", fontWeight: "600", cursor: "pointer" }}>Proceed</button>
+                  <Button variant="ghost" onClick={() => setDeleteStep(0)} style={{ flex: 1 }}>Cancel</Button>
+                  <Button variant="danger" onClick={() => setDeleteStep(2)} style={{ flex: 1 }}>Proceed</Button>
                 </div>
               </>
             )}
@@ -336,10 +346,10 @@ export default function StorageSettingsPage() {
                 <h3 style={{ marginTop: 0, fontSize: "20px", color: THEME.navy, textAlign: "center" }}>Backup Required</h3>
                 <p style={{ color: THEME.muted, fontSize: "14px", textAlign: "center", marginBottom: "24px" }}>Before permanent deletion, you must create a backup of your current database.</p>
                 <div style={{ display: "flex", gap: "12px" }}>
-                  <button onClick={() => setDeleteStep(0)} style={{ flex: 1, padding: "12px", border: `1.5px solid ${THEME.border}`, borderRadius: "8px", background: "white", color: THEME.text, fontWeight: "600", cursor: "pointer" }}>Cancel</button>
-                  <button onClick={performDeleteBackup} disabled={backingUp} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: THEME.teal, color: "white", fontWeight: "600", cursor: backingUp ? "wait" : "pointer" }}>
+                  <Button variant="ghost" onClick={() => setDeleteStep(0)} style={{ flex: 1 }}>Cancel</Button>
+                  <Button variant="primary" onClick={performDeleteBackup} disabled={backingUp} style={{ flex: 1 }}>
                     {backingUp ? "Creating..." : "Create Backup"}
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -356,8 +366,8 @@ export default function StorageSettingsPage() {
                   style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1.5px solid ${THEME.border}`, marginBottom: "24px", boxSizing: "border-box" }}
                 />
                 <div style={{ display: "flex", gap: "12px" }}>
-                  <button onClick={() => setDeleteStep(0)} style={{ flex: 1, padding: "12px", border: `1.5px solid ${THEME.border}`, borderRadius: "8px", background: "white", color: THEME.text, fontWeight: "600", cursor: "pointer" }}>Cancel</button>
-                  <button onClick={verifyPassword} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: THEME.navy, color: "white", fontWeight: "600", cursor: "pointer" }}>Verify</button>
+                  <Button variant="ghost" onClick={() => setDeleteStep(0)} style={{ flex: 1 }}>Cancel</Button>
+                  <Button variant="primary" onClick={verifyPassword} style={{ flex: 1 }}>Verify</Button>
                 </div>
               </>
             )}
@@ -374,8 +384,8 @@ export default function StorageSettingsPage() {
                   style={{ width: "100%", padding: "12px", borderRadius: "8px", border: `1.5px solid ${THEME.danger}`, marginBottom: "24px", boxSizing: "border-box", textAlign: "center", fontWeight: "700" }}
                 />
                 <div style={{ display: "flex", gap: "12px" }}>
-                  <button onClick={() => setDeleteStep(0)} style={{ flex: 1, padding: "12px", border: `1.5px solid ${THEME.border}`, borderRadius: "8px", background: "white", color: THEME.text, fontWeight: "600", cursor: "pointer" }}>Cancel</button>
-                  <button onClick={finalizeDeletion} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: THEME.danger, color: "white", fontWeight: "600", cursor: "pointer" }}>Permanently Delete</button>
+                  <Button variant="ghost" onClick={() => setDeleteStep(0)} style={{ flex: 1 }}>Cancel</Button>
+                  <Button variant="danger" onClick={finalizeDeletion} style={{ flex: 1 }}>Permanently Delete</Button>
                 </div>
               </>
             )}
@@ -392,7 +402,7 @@ export default function StorageSettingsPage() {
                 <div style={{ fontSize: "48px", color: THEME.teal, marginBottom: "16px" }}>✓</div>
                 <h3 style={{ marginTop: 0, fontSize: "20px", color: THEME.navy }}>Deletion Complete</h3>
                 <p style={{ color: THEME.muted, fontSize: "14px", marginBottom: "24px" }}>The selected data has been permanently deleted.</p>
-                <button onClick={() => setDeleteStep(0)} style={{ padding: "12px 32px", border: "none", borderRadius: "8px", background: THEME.navy, color: "white", fontWeight: "600", cursor: "pointer" }}>Close</button>
+                <Button variant="primary" onClick={() => setDeleteStep(0)}>Close</Button>
               </div>
             )}
 

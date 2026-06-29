@@ -242,26 +242,20 @@ export default function TemplatePage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "12px" }}>
-            <button onClick={openCreateCategory} style={{
-              padding: "10px 22px", background: "white", color: THEME.navy,
-              border: `1.5px solid ${THEME.border}`, borderRadius: "8px", fontSize: "14px",
-              fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
-              transition: "background 0.1s"
-            }}>
-              <FiSettings /> Manage Categories
-            </button>
-            <button onClick={openCreate} style={{
-              padding: "10px 22px", background: THEME.teal, color: "white",
-              border: "none", borderRadius: "8px", fontSize: "14px",
-              fontWeight: "600", cursor: "pointer", fontFamily: "inherit",
-              boxShadow: "0 4px 12px rgba(13,148,136,0.35)",
-              transition: "transform 0.1s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            <Button 
+              variant="secondary"
+              icon={<FiSettings />}
+              onClick={openCreateCategory}
             >
-              <FiPlus /> New Template
-            </button>
+              Manage Categories
+            </Button>
+            <Button 
+              variant="primary"
+              icon={<FiPlus />}
+              onClick={openCreate}
+            >
+              New Template
+            </Button>
           </div>
         </div>
 
@@ -369,16 +363,8 @@ export default function TemplatePage() {
               This cannot be undone.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDelConfirm(null)} style={{
-                flex: 1, padding: "10px", border: `1.5px solid ${THEME.border}`,
-                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                fontSize: "14px", fontWeight: "600", background: "white", color: THEME.text,
-              }}>Cancel</button>
-              <button onClick={() => confirmDelete(delConfirm)} style={{
-                flex: 1, padding: "10px", border: "none",
-                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                fontSize: "14px", fontWeight: "600", background: THEME.danger, color: "white",
-              }}>Delete</button>
+              <Button variant="ghost" onClick={() => setDelConfirm(null)} style={{ flex: 1 }}>Cancel</Button>
+              <Button variant="danger" onClick={() => confirmDelete(delConfirm)} style={{ flex: 1 }}>Delete</Button>
             </div>
           </div>
         </div>
@@ -401,16 +387,8 @@ export default function TemplatePage() {
               This cannot be undone. Templates using this category might lose their grouping.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDelCatConfirm(null)} style={{
-                flex: 1, padding: "10px", border: `1.5px solid ${THEME.border}`,
-                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                fontSize: "14px", fontWeight: "600", background: "white", color: THEME.text,
-              }}>Cancel</button>
-              <button onClick={() => confirmDeleteCat(delCatConfirm)} style={{
-                flex: 1, padding: "10px", border: "none",
-                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                fontSize: "14px", fontWeight: "600", background: THEME.danger, color: "white",
-              }}>Delete</button>
+              <Button variant="ghost" onClick={() => setDelCatConfirm(null)} style={{ flex: 1 }}>Cancel</Button>
+              <Button variant="danger" onClick={() => confirmDeleteCat(delCatConfirm)} style={{ flex: 1 }}>Delete</Button>
             </div>
           </div>
         </div>
@@ -548,20 +526,10 @@ export default function TemplatePage() {
               </div>
 
               <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", paddingTop: "4px" }}>
-                <button onClick={() => setShowModal(false)} style={{
-                  padding: "10px 22px", border: `1.5px solid ${THEME.border}`,
-                  borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: "14px", fontWeight: "600", background: "white", color: THEME.text,
-                }}>Cancel</button>
-                <button onClick={save} style={{
-                  padding: "10px 28px", border: "none",
-                  borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: "14px", fontWeight: "600",
-                  background: THEME.teal, color: "white",
-                  boxShadow: "0 4px 12px rgba(13,148,136,0.3)",
-                }}>
+                <Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
+                <Button variant="primary" onClick={save}>
                   {editTarget ? "Save Changes" : "Create Template"}
-                </button>
+                </Button>
               </div>
 
             </div>
@@ -686,17 +654,11 @@ export default function TemplatePage() {
               
               <div style={{ padding: "16px 24px", borderTop: `1px solid ${THEME.border}`, display: "flex", justifyContent: "space-between", background: "#fafafa", borderRadius: "0 0 16px 0" }}>
                 {editCatTarget ? (
-                  <button onClick={() => setDelCatConfirm(editCatTarget.id)} style={{
-                    padding: "10px 16px", border: "1px solid #fecaca", borderRadius: "8px", background: THEME.dangerBg, color: THEME.danger, fontWeight: "600", cursor: "pointer"
-                  }}>Delete</button>
+                  <Button variant="danger" onClick={() => setDelCatConfirm(editCatTarget.id)}>Delete</Button>
                 ) : <div />}
                 <div style={{ display: "flex", gap: "10px" }}>
-                  <button onClick={() => setShowCatModal(false)} style={{
-                    padding: "10px 22px", border: `1.5px solid ${THEME.border}`, borderRadius: "8px", background: "white", color: THEME.text, fontWeight: "600", cursor: "pointer"
-                  }}>Cancel</button>
-                  <button onClick={saveCategory} style={{
-                    padding: "10px 28px", border: "none", borderRadius: "8px", background: THEME.teal, color: "white", fontWeight: "600", cursor: "pointer", boxShadow: "0 4px 12px rgba(13,148,136,0.3)"
-                  }}>Save Category</button>
+                  <Button variant="ghost" onClick={() => setShowCatModal(false)}>Cancel</Button>
+                  <Button variant="primary" onClick={saveCategory}>Save Category</Button>
                 </div>
               </div>
             </div>
