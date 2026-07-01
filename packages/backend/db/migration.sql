@@ -148,3 +148,12 @@ INSERT OR IGNORE INTO organ_dictionary (name, keywords) VALUES
 ('Small Intestine', '["jejunum", "ileum", "small bowel", "small intestine"]'),
 ('Colon', '["colon", "ascending colon", "transverse colon", "descending colon", "sigmoid", "caecum", "cecum", "large intestine"]'),
 ('Rectum', '["rectum", "rectal"]');
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  role TEXT DEFAULT 'user',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

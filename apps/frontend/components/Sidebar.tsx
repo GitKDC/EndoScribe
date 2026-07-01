@@ -22,9 +22,18 @@ const NAV = [
   { name: "Data & Storage", path: "/settings/storage", icon: <FiFolder /> },
 ];
 
+import { useAuth } from "../context/AuthContext";
+import { FiLogOut } from "react-icons/fi";
+
 export default function Sidebar() {
   const router   = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  const navItems = [...NAV];
+  if (user?.role === "admin") {
+    navItems.push({ name: "Users", path: "/settings/users", icon: <FiUsers /> });
+  }
 
   return (
     <>
@@ -87,9 +96,9 @@ export default function Sidebar() {
         <div style={{ marginTop: "16px" }} />
 
         {/* ── Navigation ──────────────────────────────────────── */}
-        <nav style={{ flex: 1, padding: "0 10px" }}>
-          {NAV.map((item) => {
-            const active = pathname === item.path;
+        <nav style={{ flex: 1, padding: "16px 12px", overflowY: "auto" }}>
+          {navItems.map((item) => {
+            const active = pathname === item.path || (item.path !== "/" && pathname.startsWith(item.path));
             return (
               <div
                 key={item.path}
@@ -124,35 +133,52 @@ export default function Sidebar() {
 
         {/* ── Footer ──────────────────────────────────────────── */}
         <div 
-          onClick={() => router.push("/profile")}
           style={{
             padding: "16px",
             borderTop: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             gap: "12px",
-            cursor: "pointer",
-            transition: "background 0.2s",
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
         >
-          <div style={{
-            width: "36px", height: "36px", borderRadius: "50%",
-            background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "14px", fontWeight: "bold", color: "white", flexShrink: 0
-          }}>
-            HC
-          </div>
-          <div style={{ flex: 1, overflow: "hidden" }}>
-            <div style={{ fontWeight: "600", color: "rgba(255, 255, 255, 0.95)", fontSize: "13px", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
-              Dr. Hrushikesh
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, overflow: "hidden" }}>
+            <div style={{
+              width: "36px", height: "36px", borderRadius: "50%",
+              background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "14px", fontWeight: "bold", color: "white", flexShrink: 0
+            }}>
+              {user?.username?.[0]?.toUpperCase() || "U"}
             </div>
-            <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.7)", marginTop: "2px", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
-              Gastroenterologist
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <div style={{ fontWeight: "600", color: "rgba(255, 255, 255, 0.95)", fontSize: "13px", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+                {user?.username}
+              </div>
+              <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.7)", marginTop: "2px", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden", textTransform: "capitalize" }}>
+                {user?.role}
+              </div>
             </div>
           </div>
+          <button 
+            onClick={logout}
+            style={{
+              background: "transparent", border: "none", color: "rgba(255,255,255,0.7)",
+              cursor: "pointer", padding: "8px", borderRadius: "8px", display: "flex",
+              alignItems: "center", justifyContent: "center", transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+            }}
+            title="Log Out"
+          >
+            <FiLogOut size={16} />
+          </button>
         </div>
       </div>
     </>

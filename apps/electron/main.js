@@ -77,6 +77,7 @@ async function initializeApp() {
     require("../../packages/backend/ipc/analyticsHandlers").registerAnalyticsHandlers();
     require("../../packages/backend/ipc/categoryHandlers").registerCategoryHandlers();
     require("../../packages/backend/ipc/storageHandlers").registerStorageHandlers();
+    require("../../packages/backend/ipc/authHandlers").registerAuthHandlers();
 
     console.log("App initialized successfully");
   } catch (error) {

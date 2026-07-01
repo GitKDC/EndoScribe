@@ -1,5 +1,4 @@
-import Sidebar from "../components/Sidebar";
-import Header from "../components/Header";
+import AuthWrapper from "../components/AuthWrapper";
 
 export default function RootLayout({ children }: any) {
   return (
@@ -25,13 +24,7 @@ export default function RootLayout({ children }: any) {
         `}</style>
       </head>
       <body style={{ margin: 0, display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'Inter', sans-serif" }}>
-        <Sidebar />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <Header />
-          <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-            {children}
-          </div>
-        </div>
+        <AuthWrapper>{children}</AuthWrapper>
       </body>
     </html>
   );

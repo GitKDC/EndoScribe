@@ -58,6 +58,18 @@ contextBridge.exposeInMainWorld("api", {
   getSetting: async (key)         => ipcRenderer.invoke("get-setting", key),
   setSetting: async (key, value)  => ipcRenderer.invoke("set-setting", key, value),
 
+  // ─── AUTH ────────────────────────────────────────────────────────────────
+  getUsersCount: async () => ipcRenderer.invoke("auth:getUsersCount"),
+  login: async (username, password) => ipcRenderer.invoke("auth:login", username, password),
+  createUser: async (username, password, role) => ipcRenderer.invoke("auth:createUser", username, password, role),
+  getAllUsers: async () => ipcRenderer.invoke("auth:getAllUsers"),
+  deleteUser: async (id) => ipcRenderer.invoke("auth:deleteUser", id),
+  
+  // ─── RECOVERY ────────────────────────────────────────────────────────────
+  generateRecoveryKey: async () => ipcRenderer.invoke("auth:generateRecoveryKey"),
+  verifyRecoveryKey: async (key) => ipcRenderer.invoke("auth:verifyRecoveryKey", key),
+  resetAdminPassword: async (password) => ipcRenderer.invoke("auth:resetAdminPassword", password),
+
   // ─── STORAGE & CONFIG APIs ───────────────────────────────────────────────
   getAppConfig:   async ()       => ipcRenderer.invoke("get-app-config"),
   setAppConfig:   async (upd)    => ipcRenderer.invoke("set-app-config", upd),
