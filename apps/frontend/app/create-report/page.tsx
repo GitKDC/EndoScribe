@@ -100,6 +100,7 @@ function CreateReportInner() {
   // ── Referral Doctor ─────────────────────────────────────────────────────────
   const [referralName, setReferralName] = useState("");
   const [referralId, setReferralId] = useState<number | null>(null);
+  const [referralPhone, setReferralPhone] = useState("");
 
   // ── Master Image Adjustments ────────────────────────────────────────────────
   const [masterBrightness, setMasterBrightness] = useState(70);
@@ -315,6 +316,7 @@ function CreateReportInner() {
           doctorIds: selectedDoctorIds,
           referralDoctorId: referralId,
           referralDoctorName: referralName,
+          referralDoctorPhone: referralPhone,
           reportType,
           sections,
           images: images.map((img, i) => ({
@@ -517,6 +519,8 @@ function CreateReportInner() {
               referralName={referralName}
               onReferralNameChange={setReferralName}
               onReferralIdChange={setReferralId}
+              referralPhone={referralPhone}
+              onReferralPhoneChange={setReferralPhone}
             />
 
             {/* Image uploader */}

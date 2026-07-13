@@ -58,6 +58,13 @@ if (fs.existsSync(migrationPath)) {
     } else {
       console.log("✅ Migrations completed");
       
+      // Auto-migrate new columns
+      db.run("ALTER TABLE reports ADD COLUMN patient_phone TEXT", (err) => {
+        if (!err) console.log("✅ Added patient_phone column to reports");
+      });
+      db.run("ALTER TABLE reports ADD COLUMN referral_doctor_phone TEXT", (err) => {
+        if (!err) console.log("✅ Added referral_doctor_phone column to reports");
+      });
       // Run safe column additions just in case
       db.run("ALTER TABLE reports ADD COLUMN patient_id INTEGER REFERENCES patients(id)", () => {});
       db.run("ALTER TABLE reports ADD COLUMN referral_doctor_id INTEGER REFERENCES referral_doctors(id)", () => {});

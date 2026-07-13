@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import ReportPreview from "../../components/ReportPreview";
 import { IoMdEye, IoIosArrowDown } from "react-icons/io";
 import { SlCalender } from "react-icons/sl";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiTrash2, FiMessageSquare } from "react-icons/fi";
 import { MdPrint, MdPictureAsPdf, MdDownload } from "react-icons/md";
 import { generatePDF } from "../../utils/reportGenerator";
 import { buildEndoUrl } from "../../utils/buildEndoUrl";
@@ -33,6 +33,12 @@ export default function ReportsPage() {
   // Download state
   const [downloadingReport, setDownloadingReport] = useState<any>(null);
   const [generatingId, setGeneratingId] = useState<number | null>(null);
+
+  const [whatsappModalReport, setWhatsappModalReport] = useState<any>(null);
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappDoctorPhone, setWhatsappDoctorPhone] = useState("");
+  const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false);
+  const [sendingTarget, setSendingTarget] = useState<"patient" | "doctor" | null>(null);
 
   const fetchReports = async () => {
     if (!(window as any).api) return;
@@ -104,7 +110,7 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    if (downloadingReport && generatingId !== null) {
+    if (downloadingReport && generatingId !== null && !whatsappModalReport) {
       // Need a short delay to allow React to mount the off-screen ReportPreview and images to load
       setTimeout(async () => {
         try {
@@ -116,9 +122,6 @@ export default function ReportsPage() {
             downloadingReport.report_number,
             true // downloadToDownloads flag
           );
-          if (result && result.absolutePath) {
-            // We can optionally show an alert, or since it downloads to browser default, we can omit it.
-          }
         } catch (err) {
           console.error("PDF generation failed", err);
           alert("Failed to generate PDF");
@@ -128,14 +131,72 @@ export default function ReportsPage() {
         }
       }, 500); // 500ms delay for DOM to settle
     }
-  }, [downloadingReport, generatingId]);
+  }, [downloadingReport, generatingId, whatsappModalReport]);
 
-  // 🔥 FIX: previously `img.url || endo://${img.file_path}` concatenated the
-  // raw absolute path directly into a URL string. Any space or special
-  // character in the path (e.g. macOS "Application Support") broke the
-  // browser's URL parsing silently and the image just never loaded.
-  // buildEndoUrl() percent-encodes the path first so it round-trips
-  // correctly through the endo:// protocol handler in main.js.
+  const handleOpenWhatsappModal = async (id: number) => {
+    if (!(window as any).api) return;
+    try {
+      const data = await (window as any).api.getReport(id);
+      setWhatsappModalReport(data);
+      setWhatsappPhone(data.patient_phone || data.phone || "");
+      setWhatsappDoctorPhone(data.referral_doctor_phone || "");
+    } catch (err) {
+      alert("Failed to fetch report details");
+    }
+  };
+
+  const submitSendWhatsapp = async (target: "patient" | "doctor") => {
+    const targetPhone = target === "patient" ? whatsappPhone : whatsappDoctorPhone;
+    if (!targetPhone) return alert("Please enter a phone number");
+    setIsSendingWhatsapp(true);
+    setSendingTarget(target);
+    
+    // First, generate and save the PDF locally
+    setDownloadingReport(whatsappModalReport);
+    setGeneratingId(whatsappModalReport.id);
+    
+    setTimeout(async () => {
+      try {
+        const pdfResult = await generatePDF(
+          whatsappModalReport.created_at,
+          whatsappModalReport.patient_name,
+          `${whatsappModalReport.age} Yrs / ${whatsappModalReport.gender}`,
+          whatsappModalReport.report_type,
+          whatsappModalReport.report_number,
+          false // downloadToDownloads=false so it saves locally and returns absolutePath
+        );
+
+        if (pdfResult && pdfResult.absolutePath) {
+          const isDoctor = target === "doctor";
+          
+          const reportData = {
+            patientName: whatsappModalReport.patient_name,
+            age: whatsappModalReport.age,
+            gender: whatsappModalReport.gender,
+            reportType: whatsappModalReport.report_type
+          };
+
+          const sendRes = await (window as any).api.sendWhatsAppReport(pdfResult.absolutePath, targetPhone, isDoctor, reportData);
+          if (sendRes.success) {
+            alert(`WhatsApp message sent successfully to ${target}!`);
+            if (target === "patient") setWhatsappPhone("");
+            if (target === "doctor") setWhatsappDoctorPhone("");
+            // Keep modal open so they can send to the other if they want, unless both are done
+          } else {
+            alert("Failed to send WhatsApp: " + sendRes.message);
+          }
+        }
+      } catch (err: any) {
+        alert("Failed to send: " + err.message);
+      } finally {
+        setIsSendingWhatsapp(false);
+        setSendingTarget(null);
+        setDownloadingReport(null);
+        setGeneratingId(null);
+      }
+    }, 500);
+  };
+
   const mapImagesForPreview = (images: any[]) =>
     (images || []).map((img: any) => ({
       id: String(img.id),
@@ -256,6 +317,14 @@ export default function ReportsPage() {
                         onClick={() => handleDownloadPDF(r.id)} 
                         disabled={generatingId === r.id} 
                       />
+                      <Button 
+                        variant="icon" 
+                        size="sm" 
+                        icon={<FiMessageSquare size={18} />} 
+                        onClick={() => handleOpenWhatsappModal(r.id)} 
+                        disabled={generatingId === r.id}
+                        style={{ color: "#16a34a" }}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -314,16 +383,7 @@ export default function ReportsPage() {
                   {selectedReport.report_number}
                 </span>
               </div>
-              <button 
-                onClick={() => setSelectedReport(null)} 
-                style={{ 
-                  background: "#ef4444", color: "white", border: "none", padding: "8px 16px", 
-                  borderRadius: "6px", cursor: "pointer", fontWeight: "600", fontSize: "14px",
-                  boxShadow: "0 2px 4px rgba(239, 68, 68, 0.3)"
-                }}
-              >
-                Close Preview
-              </button>
+              <Button variant="secondary" onClick={() => setSelectedReport(null)}>Close</Button>
             </div>
 
             {/* Modal Body (A4 Report) */}
@@ -341,6 +401,76 @@ export default function ReportsPage() {
                   reportNumber={selectedReport.report_number}
                   selectedDoctors={selectedReport.selected_doctors}
                 />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FOR WHATSAPP */}
+      {whatsappModalReport && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 10000, 
+          display: "flex", justifyContent: "center", alignItems: "center"
+        }}>
+          <div style={{
+            background: "white", padding: "32px", borderRadius: "16px",
+            width: "100%", maxWidth: "420px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
+          }}>
+            <h2 style={{ color: "#1a3a52", margin: "0 0 8px", fontSize: "20px" }}>Send Report via WhatsApp</h2>
+            <p style={{ color: "#666", fontSize: "14px", marginBottom: "24px", lineHeight: "1.5" }}>
+              Sending report for <strong>{whatsappModalReport.patient_name}</strong>.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc" }}>
+                <h4 style={{ margin: "0 0 12px", color: "#1e293b", fontSize: "14px" }}>Send to Patient</h4>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <input 
+                    type="text" 
+                    value={whatsappPhone} 
+                    onChange={e => setWhatsappPhone(e.target.value)}
+                    placeholder="Patient Phone (e.g. 919876543210)"
+                    style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                  />
+                  <Button 
+                    variant="primary" 
+                    style={{ background: "#16a34a", borderColor: "#16a34a", padding: "8px 16px" }} 
+                    onClick={() => submitSendWhatsapp("patient")} 
+                    disabled={isSendingWhatsapp || !whatsappPhone}
+                  >
+                    {sendingTarget === "patient" ? "Sending..." : "Send"}
+                  </Button>
+                </div>
+              </div>
+
+              {whatsappModalReport.referral_name && (
+                <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc" }}>
+                  <h4 style={{ margin: "0 0 12px", color: "#1e293b", fontSize: "14px" }}>Send to Dr. {whatsappModalReport.referral_name}</h4>
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <input 
+                      type="text" 
+                      value={whatsappDoctorPhone} 
+                      onChange={e => setWhatsappDoctorPhone(e.target.value)}
+                      placeholder="Doctor Phone (e.g. 919876543210)"
+                      style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                    />
+                    <Button 
+                      variant="primary" 
+                      style={{ background: "#0284c7", borderColor: "#0284c7", padding: "8px 16px" }} 
+                      onClick={() => submitSendWhatsapp("doctor")} 
+                      disabled={isSendingWhatsapp || !whatsappDoctorPhone}
+                    >
+                      {sendingTarget === "doctor" ? "Sending..." : "Send"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+                <Button variant="secondary" onClick={() => setWhatsappModalReport(null)}>
+                  Close
+                </Button>
               </div>
             </div>
           </div>

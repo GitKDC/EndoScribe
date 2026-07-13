@@ -56,6 +56,7 @@ const saveReport = async (data) => {
     doctorId,
     referralDoctorId,
     referralDoctorName,
+    referralDoctorPhone,
     templateId,
     reportType,
     sections,
@@ -109,8 +110,8 @@ const saveReport = async (data) => {
       } else {
         await new Promise((res, rej) => {
           db.run(
-            "INSERT INTO referral_doctors (name) VALUES (?)",
-            [referralDoctorName.trim()],
+            "INSERT INTO referral_doctors (name, phone) VALUES (?, ?)",
+            [referralDoctorName.trim(), referralDoctorPhone || null],
             function (err) {
               if (err) return rej(err);
               referralDoctorId = this.lastID;
@@ -128,8 +129,8 @@ const saveReport = async (data) => {
     db.run(
       `INSERT INTO reports
        (report_number, patient_prefix, patient_name, age, gender,
-        doctor_id, doctor_ids, template_id, report_type, sections, patient_id, referral_doctor_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        doctor_id, doctor_ids, template_id, report_type, sections, patient_id, referral_doctor_id, patient_phone, referral_doctor_phone)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         reportNumber,
         patientPrefix,
@@ -143,6 +144,8 @@ const saveReport = async (data) => {
         JSON.stringify(sections || []),
         patientId || null,
         referralDoctorId || null,
+        patientPhone || null,
+        referralDoctorPhone || null,
       ],
       function (err) {
         if (err) return reject(err);
@@ -267,9 +270,10 @@ const getAllReports = (filters = {}) => {
 const getReport = (id) => {
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT r.*, d.name AS doctor_name, d.qualifications, d.designation
+      `SELECT r.*, d.name AS doctor_name, d.qualifications, d.designation, rd.name AS referral_name
        FROM reports r
        LEFT JOIN doctors d ON r.doctor_id = d.id
+       LEFT JOIN referral_doctors rd ON r.referral_doctor_id = rd.id
        WHERE r.id = ?`,
       [id],
       (err, row) => {

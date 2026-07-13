@@ -108,11 +108,8 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "1000px", margin: "0 auto", fontFamily: "'Inter', sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <h1 style={{ color: THEME.navy, fontSize: "28px", fontWeight: "700", margin: 0 }}>
-          User Management
-        </h1>
+    <div style={{ maxWidth: "1000px", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "24px" }}>
         <div style={{ display: "flex", gap: "12px" }}>
           <Button 
             variant="secondary" 

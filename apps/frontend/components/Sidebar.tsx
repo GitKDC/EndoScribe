@@ -8,7 +8,9 @@ import {
   FiHeart, 
   FiFileText, 
   FiFolder, 
-  FiActivity 
+  FiActivity,
+  FiMessageSquare,
+  FiSettings
 } from "react-icons/fi";
 
 const NAV = [
@@ -19,7 +21,7 @@ const NAV = [
   { name: "Reports",     path: "/reports",         icon: <FiFileText /> },
   { name: "Templates",   path: "/templates",       icon: <FiFolder /> },
   { name: "Analytics",   path: "/analytics",       icon: <FiActivity /> },
-  { name: "Data & Storage", path: "/settings/storage", icon: <FiFolder /> },
+  { name: "Settings",    path: "/settings/storage", icon: <FiSettings /> },
 ];
 
 import { useAuth } from "../context/AuthContext";
@@ -32,7 +34,7 @@ export default function Sidebar() {
 
   const navItems = [...NAV];
   if (user?.role === "admin") {
-    navItems.push({ name: "Users", path: "/settings/users", icon: <FiUsers /> });
+    // Admin user tab is now handled inside the Settings layout
   }
 
   return (

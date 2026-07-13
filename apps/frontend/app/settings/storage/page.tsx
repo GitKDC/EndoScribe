@@ -176,13 +176,10 @@ export default function StorageSettingsPage() {
   };
 
   return (
-    <div style={{ padding: "32px 40px", background: THEME.bg, minHeight: "100%", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
       
       <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", color: THEME.navyDark }}>
-          Data & Storage Settings
-        </h1>
-        <p style={{ margin: "6px 0 0", color: THEME.muted, fontSize: "14.5px" }}>
+        <p style={{ margin: "0", color: THEME.muted, fontSize: "14.5px" }}>
           Manage your application's data pathways, verify integrity, and secure patient information.
         </p>
       </div>

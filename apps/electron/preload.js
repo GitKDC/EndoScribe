@@ -70,6 +70,9 @@ contextBridge.exposeInMainWorld("api", {
   verifyRecoveryKey: async (key) => ipcRenderer.invoke("auth:verifyRecoveryKey", key),
   resetAdminPassword: async (password) => ipcRenderer.invoke("auth:resetAdminPassword", password),
 
+  // ─── WHATSAPP ────────────────────────────────────────────────────────────
+  sendWhatsAppReport: async (pdfPath, toPhoneNumber, isDoctor, reportData) => ipcRenderer.invoke("whatsapp:sendReport", pdfPath, toPhoneNumber, isDoctor, reportData),
+
   // ─── STORAGE & CONFIG APIs ───────────────────────────────────────────────
   getAppConfig:   async ()       => ipcRenderer.invoke("get-app-config"),
   setAppConfig:   async (upd)    => ipcRenderer.invoke("set-app-config", upd),

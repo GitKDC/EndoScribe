@@ -62,6 +62,8 @@ interface ReportFormProps {
   setPrefix:           (v: string) => void;
   referralName:        string;
   onReferralNameChange: (v: string) => void;
+  referralPhone:       string;
+  onReferralPhoneChange: (v: string) => void;
   onReferralIdChange?: (id: number | null) => void;
 }
 
@@ -71,7 +73,8 @@ const ReportForm: React.FC<ReportFormProps> = ({
   doctors, categories, onDoctorsChange, selectedDoctorIds, onDoctorSelectionChange,
   onPatientNameChange, onPatientPhoneChange, onPatientIdChange, onPatientAgeChange, onPatientCityChange,
   onReportDateChange, onTemplateSelect, setPrefix,
-  referralName, onReferralNameChange, onReferralIdChange
+  referralName, onReferralNameChange, onReferralIdChange,
+  referralPhone, onReferralPhoneChange
 }) => {
   const [activeField, setActiveField] = useState<string | null>(null);
   const [age, setAge]     = useState("");
@@ -432,6 +435,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
                         className="pat-sug"
                         onClick={() => {
                           onReferralNameChange(r.name);
+                          if (r.phone) onReferralPhoneChange(r.phone);
                           onReferralIdChange?.(r.id);
                           setShowReferralSugs(false);
                         }}
@@ -445,6 +449,19 @@ const ReportForm: React.FC<ReportFormProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label style={lbl}>Referral Phone No.</label>
+            <input 
+              type="text" 
+              value={referralPhone} 
+              onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  onReferralPhoneChange(val);
+                }}
+              placeholder="Referral Phone No." onFocus={focus("rfph")} onBlur={blur}
+              style={{ ...inp("rfph"), width: "100%" }} />
           </div>
 
           <div style={{ display: "flex", gap: "10px" }}>

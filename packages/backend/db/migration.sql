@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS reports (
   report_type TEXT,
   sections TEXT,
   pdf_path TEXT,
+  patient_phone TEXT,
+  referral_doctor_phone TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (doctor_id) REFERENCES doctors(id)
 );
