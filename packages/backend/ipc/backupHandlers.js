@@ -18,7 +18,7 @@ const daysBetween = (dateStr, now = new Date()) => {
 const createZip = (destPath, dbPath, imagesPath) => {
   return new Promise((resolve, reject) => {
     const output  = fs.createWriteStream(destPath);
-    const archive = new archiver.ZipArchive({ zlib: { level: 9 } });
+    const archive = archiver("zip", { zlib: { level: 9 } });
 
     archive.on("error", reject);
 

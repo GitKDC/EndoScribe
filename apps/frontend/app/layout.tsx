@@ -1,5 +1,5 @@
 import AuthWrapper from "../components/AuthWrapper";
-
+import LicenseGate from "../components/LicenseGate";
 export default function RootLayout({ children }: any) {
   return (
     <html>
@@ -24,7 +24,9 @@ export default function RootLayout({ children }: any) {
         `}</style>
       </head>
       <body style={{ margin: 0, display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'Inter', sans-serif" }}>
-        <AuthWrapper>{children}</AuthWrapper>
+        <LicenseGate>
+          <AuthWrapper>{children}</AuthWrapper>
+        </LicenseGate>
       </body>
     </html>
   );

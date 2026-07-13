@@ -73,6 +73,10 @@ contextBridge.exposeInMainWorld("api", {
   // ─── WHATSAPP ────────────────────────────────────────────────────────────
   sendWhatsAppReport: async (pdfPath, toPhoneNumber, isDoctor, reportData) => ipcRenderer.invoke("whatsapp:sendReport", pdfPath, toPhoneNumber, isDoctor, reportData),
 
+  // ─── LICENSING ───────────────────────────────────────────────────────────
+  verifyLicense: async () => ipcRenderer.invoke("license:verify"),
+  saveLicense: async (key) => ipcRenderer.invoke("license:save", key),
+
   // ─── STORAGE & CONFIG APIs ───────────────────────────────────────────────
   getAppConfig:   async ()       => ipcRenderer.invoke("get-app-config"),
   setAppConfig:   async (upd)    => ipcRenderer.invoke("set-app-config", upd),

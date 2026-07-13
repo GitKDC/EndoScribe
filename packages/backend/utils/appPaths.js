@@ -21,7 +21,7 @@ function getStoragePaths() {
 function getDatabasePath() {
   const p = getStoragePaths().database;
   ensureDirectory(p);
-  return path.join(p, "endoscopy.db");
+  return path.join(p, "endoscribe_secure.db");
 }
 
 function getImagesBasePath() {

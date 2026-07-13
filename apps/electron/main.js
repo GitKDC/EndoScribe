@@ -79,6 +79,7 @@ async function initializeApp() {
     require("../../packages/backend/ipc/storageHandlers").registerStorageHandlers();
     require("../../packages/backend/ipc/authHandlers").registerAuthHandlers();
     require("../../packages/backend/ipc/whatsappHandlers").registerWhatsappHandlers();
+    require("../../packages/backend/ipc/licenseHandlers").registerLicenseHandlers();
 
     console.log("App initialized successfully");
   } catch (error) {
