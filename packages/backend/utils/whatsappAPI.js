@@ -28,9 +28,15 @@ async function sendWhatsAppReport(pdfPath, toPhoneNumber, isDoctor = false, repo
     }
 
     // Format phone number (remove +, spaces, dashes, etc.)
-    const cleanPhone = toPhoneNumber.replace(/\D/g, '');
-    if (!cleanPhone) {
-      throw new Error("Invalid phone number.");
+    let cleanPhone = toPhoneNumber.replace(/\D/g, '');
+    
+    // Auto-prepend Indian country code if missing (10 digits)
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    }
+
+    if (!cleanPhone || cleanPhone.length < 11) {
+      throw new Error("Invalid phone number. Must include country code.");
     }
 
     // 2. Upload the PDF to Meta's servers
@@ -59,14 +65,14 @@ async function sendWhatsAppReport(pdfPath, toPhoneNumber, isDoctor = false, repo
     let bodyParameters = [];
     if (isDoctor) {
       bodyParameters = [
-        { type: "text", text: patientName },
-        { type: "text", text: String(age) },
-        { type: "text", text: gender },
-        { type: "text", text: reportType }
+        { type: "text", parameter_name: "patient_name", text: patientName || "Patient" },
+        { type: "text", parameter_name: "patient_age", text: String(age) || " " },
+        { type: "text", parameter_name: "patient_gender", text: gender || " " },
+        { type: "text", parameter_name: "report_name", text: reportType || "Medical" }
       ];
     } else {
       bodyParameters = [
-        { type: "text", text: reportType } // Patient template only has {{report_name}}
+        { type: "text", parameter_name: "report_name", text: reportType || "Medical" } 
       ];
     }
 
@@ -79,7 +85,7 @@ async function sendWhatsAppReport(pdfPath, toPhoneNumber, isDoctor = false, repo
       template: {
         name: templateName,
         language: {
-          code: "en" // Assuming English. For production, could be configurable
+          code: "en" 
         },
         components: [
           {
