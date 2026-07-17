@@ -446,7 +446,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
         >
           {footerDoctors.map((doc) => (
             <div key={doc.id}>
-              <p style={{ margin: 0, fontWeight: "600" }}>{doc.name}</p>
+              <p style={{ margin: 0, fontWeight: "700" }}>{doc.name}</p>
               {doc.qualifications && (
                 <p style={{ margin: 0 }}>{doc.qualifications}</p>
               )}

@@ -13,9 +13,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@journeyapps/sqlcipher": "^5.1.0",
     "archiver": "^8.0.0",
+    "axios": "^1.18.1",
+    "date-fns": "^4.4.0",
     "electron": "^42.3.0",
-    "sqlite3": "^6.0.1",
+    "node-machine-id": "^1.1.12",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

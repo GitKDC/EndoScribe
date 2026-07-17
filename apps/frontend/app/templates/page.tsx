@@ -207,8 +207,7 @@ export default function TemplatePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; }
+                * { box-sizing: border-box; }
         .tpl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important; transform: translateY(-1px); }
         .tpl-card { transition: box-shadow 0.18s, transform 0.18s; }
         input:focus, textarea:focus, select:focus { border-color: #0d9488 !important; box-shadow: 0 0 0 3px rgba(13,148,136,0.15) !important; }

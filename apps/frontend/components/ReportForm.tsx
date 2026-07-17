@@ -273,8 +273,7 @@ const ReportForm: React.FC<ReportFormProps> = ({
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; }
+                * { box-sizing: border-box; }
         .rfmt:hover { background: #e2e8f0 !important; }
         .rrem:hover { background: #fee2e2 !important; }
         .doc-opt:hover { background: #f0fdfa !important; }

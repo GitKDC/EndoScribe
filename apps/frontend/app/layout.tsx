@@ -1,13 +1,19 @@
 import AuthWrapper from "../components/AuthWrapper";
 import LicenseGate from "../components/LicenseGate";
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'] 
+});
+
 export default function RootLayout({ children }: any) {
   return (
     <html>
       <head>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-          body, input, button, textarea, select {
-            font-family: 'Inter', sans-serif !important;
+          input, button, textarea, select {
+            font-family: inherit !important;
           }
           input[type="date"]::-webkit-calendar-picker-indicator {
             opacity: 0;
@@ -23,7 +29,7 @@ export default function RootLayout({ children }: any) {
           }
         `}</style>
       </head>
-      <body style={{ margin: 0, display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'Inter', sans-serif" }}>
+      <body className={inter.className} style={{ margin: 0, display: "flex", height: "100vh", overflow: "hidden" }}>
         <LicenseGate>
           <AuthWrapper>{children}</AuthWrapper>
         </LicenseGate>

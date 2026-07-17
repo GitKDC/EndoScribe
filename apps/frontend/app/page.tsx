@@ -6,8 +6,7 @@ import {
   FiUsers, FiFolder, FiHardDrive, FiActivity,
   FiUserPlus, FiEdit2, FiTrash2
 } from "react-icons/fi";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+
 
 const THEME = {
   navy:    "#1a3a52",
@@ -126,8 +125,7 @@ export default function Dashboard() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; }
+                * { box-sizing: border-box; }
         .dash-quick:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
         .dash-quick { transition: transform 0.18s, box-shadow 0.18s; }
         .tpl-row:hover { background: #f8fafc !important; }
@@ -201,34 +199,6 @@ export default function Dashboard() {
               }}
             >
               <FiEdit /> New Report
-            </button>
-
-            <button
-              onClick={async () => {
-                try {
-                  const res = await (window as any).api.createBackup();
-                  if (res?.success) {
-                    alert("Backup saved:\n" + res.path);
-                  }
-                } catch {
-                  alert("Backup failed");
-                }
-              }}
-              style={{
-                padding: "11px 24px",
-                background: THEME.teal,
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                boxShadow: "0 4px 14px rgba(13,148,136,0.4)",
-              }}>
-              <FiSave /> Backup Now
             </button>
            </div>
           </div>
@@ -380,39 +350,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* ── Info strip ───────────────────────────────────── */}
-          <div style={{
-            ...card,
-            padding: "18px 24px",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            background: `linear-gradient(90deg, ${THEME.tealLight}, #f0fdf4)`,
-            border: `1px solid #99f6e4`,
-          }}>
-            <span style={{ fontSize: "24px" }}>💡</span>
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: "600", color: THEME.navy }}>
-                Tip: Use templates to speed up report generation
-              </div>
-              <div style={{ fontSize: "12px", color: THEME.muted, marginTop: "2px" }}>
-                Load a template in the New Report screen, then customise clinical findings before printing or exporting.
-              </div>
-            </div>
-            <button
-              onClick={() => router.push("/create-report")}
-              style={{
-                marginLeft: "auto", flexShrink: 0,
-                padding: "9px 18px",
-                background: THEME.teal, color: "white",
-                border: "none", borderRadius: "7px",
-                fontSize: "13px", fontWeight: "600",
-                cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              Try now
-            </button>
-          </div>
         </div>
       </div>
     </>

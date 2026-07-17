@@ -359,6 +359,7 @@ function CreateReportInner() {
     borderRadius: "8px",
     fontSize: "14px",
     fontWeight: "600",
+    fontFamily: "inherit",
     cursor: "pointer",
     boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
     transition: "transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease",
