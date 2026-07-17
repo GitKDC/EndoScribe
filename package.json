@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "electron .",
+    "build:win": "electron-builder --win",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,6 +19,26 @@
     "uuid": "^14.0.0"
   },
   "devDependencies": {
+    "electron-builder": "^24.13.3",
     "electron-rebuild": "^3.2.9"
+  },
+  "build": {
+    "appId": "com.endoscribe.app",
+    "productName": "EndoScribe",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraMetadata": {
+      "main": "apps/electron/main.js"
+    }
   }
 }
