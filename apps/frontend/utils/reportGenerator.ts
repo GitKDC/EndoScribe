@@ -195,12 +195,12 @@ const captureReport = async (scale = 3, targetReportNumber?: string): Promise<HT
 
 // ── PDF ────────────────────────────────────────────────────────────────────────
 export const generatePDF = async (reportDate: string, patientName: string, patientAge: string, reportType: string, reportNumber?: string, downloadToDownloads = false): Promise<any> => {
-  const canvas = await captureReport(3, reportNumber);
+  const canvas = await captureReport(2, reportNumber); // Reduced scale from 3 to 2 for massive memory savings while staying sharp
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // canvas is always exactly A4_PX_W × A4_PX_H → maps to one A4 page, no stretching
-  pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, A4_MM_W, A4_MM_H);
+  // Convert to highly compressed JPEG instead of lossless PNG to reduce 25MB -> ~1MB
+  pdf.addImage(canvas.toDataURL("image/jpeg", 0.90), "JPEG", 0, 0, A4_MM_W, A4_MM_H);
 
   const filename = `${formatFileName(patientName, reportType, reportDate, patientAge, reportNumber)}.pdf`;
   

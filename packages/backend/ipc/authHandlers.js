@@ -32,7 +32,7 @@ function registerAuthHandlers() {
       return { success: true, data: newUser };
     } catch (error) {
       console.error("Error creating user:", error);
-      return { success: false, message: "Could not create user. Username might already exist." };
+      return { success: false, message: error.message || "Could not create user. Username might already exist." };
     }
   });
 

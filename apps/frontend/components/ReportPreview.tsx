@@ -389,7 +389,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               <div
                 key={img.id}
                 style={{
-                  flex: 1,
+                  height: "calc((100% - 18px) / 4)",
                   minHeight: 0,
                   display: "flex",
                   justifyContent: "flex-end",

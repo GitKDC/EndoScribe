@@ -1,9 +1,5 @@
-const sqlite3 = require("sqlite3").verbose();
-const { getDatabasePath } = require("../utils/appPaths");
+const db = require("../db/db");
 const crypto = require("crypto");
-
-const dbPath = getDatabasePath();
-const db = new sqlite3.Database(dbPath);
 
 const hashPassword = (password, salt) => {
   return crypto.scryptSync(password, salt, 64).toString("hex");

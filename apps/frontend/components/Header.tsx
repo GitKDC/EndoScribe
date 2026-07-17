@@ -48,13 +48,7 @@ export default function Header() {
         )}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <span style={{ 
-          width: "32px", height: "32px", borderRadius: "50%", 
-          background: "#0d9488", display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: "700", fontSize: "14px"
-        }}>
-          HC
-        </span>
+
         <span style={{ fontSize: "14px", fontWeight: "600" }}>
           Dr. Hrushikesh Chaudhari
         </span>
