@@ -115,10 +115,11 @@ export default function Dashboard() {
   }));
 
   const card: React.CSSProperties = {
-    background: THEME.white,
-    borderRadius: "14px",
-    border: `1px solid ${THEME.border}`,
-    boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(12px)",
+    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.8)",
+    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02)",
     overflow: "hidden",
   };
 
@@ -242,6 +243,44 @@ export default function Dashboard() {
             ))}
           </div>
 
+          {/* ── Doctors Management ────────────────────────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
+            <div style={{ ...card, padding: "22px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: THEME.navy, display: "flex", alignItems: "center" }}>
+                  <FiUsers style={{ marginRight: "8px" }} /> Doctors
+                </h3>
+                <button
+                  onClick={() => { setEditDoc(null); setFName(""); setFQual(""); setFDesig(""); setFDefault(true); setShowDocModal(true); }}
+                  style={{
+                    fontSize: "12px", color: THEME.teal, background: "none",
+                    border: "none", cursor: "pointer", fontWeight: "600", fontFamily: "inherit",
+                  }}
+                >
+                  + Add Doctor
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+                {doctors.map((d, i) => (
+                  <div key={d.id} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "10px 12px", borderRadius: "8px", borderBottom: i < doctors.length - 1 ? `1px solid ${THEME.border}` : "none",
+                  }}>
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: THEME.text }}>{d.name}</div>
+                      <div style={{ fontSize: "11px", color: THEME.muted }}>{d.qualifications} {d.designation ? `• ${d.designation}` : ""}</div>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => { setEditDoc(d); setFName(d.name); setFQual(d.qualifications || ""); setFDesig(d.designation || ""); setFDefault(Boolean(d.is_default)); setShowDocModal(true); }} style={{ background: "none", border: "none", color: THEME.teal, cursor: "pointer" }}><FiEdit2 size={14}/></button>
+                      <button onClick={async () => { if(confirm("Delete doctor?")) { await (window as any).api.deleteDoctor(d.id); loadDoctors(); } }} style={{ background: "none", border: "none", color: THEME.danger, cursor: "pointer" }}><FiTrash2 size={14}/></button>
+                    </div>
+                  </div>
+                ))}
+                {doctors.length === 0 && <div style={{ fontSize: "13px", color: THEME.muted, padding: "16px", textAlign: "center" }}>No doctors added yet.</div>}
+              </div>
+            </div>
+          </div>
+
           {/* ── Quick start + template list ───────────────────── */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: "20px" }}>
 
@@ -352,6 +391,35 @@ export default function Dashboard() {
 
         </div>
       </div>
+      {showDocModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{ background: "white", padding: "32px", borderRadius: "16px", width: "400px", maxWidth: "90%" }}>
+            <h3 style={{ margin: "0 0 20px", color: THEME.navy }}>{editDoc ? "Edit Doctor" : "Add Doctor"}</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <input placeholder="Name (e.g. Dr. John Doe)" value={fName} onChange={e=>setFName(e.target.value)} style={{ padding: "10px", borderRadius: "8px", border: `1px solid ${THEME.border}` }} />
+              <input placeholder="Qualifications (e.g. MD, DM)" value={fQual} onChange={e=>setFQual(e.target.value)} style={{ padding: "10px", borderRadius: "8px", border: `1px solid ${THEME.border}` }} />
+              <input placeholder="Designation (Optional)" value={fDesig} onChange={e=>setFDesig(e.target.value)} style={{ padding: "10px", borderRadius: "8px", border: `1px solid ${THEME.border}` }} />
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                <input type="checkbox" checked={fDefault} onChange={e=>setFDefault(e.target.checked)} />
+                Auto-select this doctor in new reports
+              </label>
+              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+                <button onClick={() => setShowDocModal(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: `1px solid ${THEME.border}`, background: "white", cursor: "pointer" }}>Cancel</button>
+                <button onClick={async () => {
+                  const data = { name: fName, qualifications: fQual, designation: fDesig, is_default: fDefault ? 1 : 0 };
+                  if (editDoc) await (window as any).api.updateDoctor(editDoc.id, data);
+                  else await (window as any).api.createDoctor(data);
+                  setShowDocModal(false);
+                  loadDoctors();
+                }} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: THEME.teal, color: "white", cursor: "pointer" }}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

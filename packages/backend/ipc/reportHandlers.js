@@ -81,7 +81,7 @@ const registerReportHandlers = () => {
           escapeCSV(report.report_type),
           escapeCSV(report.patient_name),
           escapeCSV(report.doctor_name || "Unknown"),
-          escapeCSV(new Date(report.created_at).toLocaleDateString("en-GB")),
+          escapeCSV(" " + new Date(report.created_at).toLocaleDateString("en-GB")),
           escapeCSV(report.pdf_path || "Not downloaded yet")
         ].join(",");
       });

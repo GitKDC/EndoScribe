@@ -17,7 +17,7 @@ const userRepo = {
 
   getAllUsers: () => {
     return new Promise((resolve, reject) => {
-      db.all("SELECT id, username, role, created_at FROM users ORDER BY created_at ASC", [], (err, rows) => {
+      db.all("SELECT id, username, role FROM users ORDER BY id ASC", [], (err, rows) => {
         if (err) reject(err);
         else resolve(rows);
       });

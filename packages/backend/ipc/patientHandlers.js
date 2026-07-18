@@ -59,7 +59,7 @@ function registerPatientHandlers() {
         }
         
         return [
-          escapeCSV(new Date(report.created_at).toLocaleDateString("en-GB")),
+          escapeCSV(" " + new Date(report.created_at).toLocaleDateString("en-GB")),
           escapeCSV(report.patient_name),
           escapeCSV(report.phone || ""),
           escapeCSV(report.age),
@@ -68,7 +68,7 @@ function registerPatientHandlers() {
           escapeCSV(report.doctor_name || "Unknown"),
           escapeCSV(report.referral_name || ""),
           escapeCSV(impression),
-          escapeCSV(report.last_visit ? new Date(report.last_visit).toLocaleDateString("en-GB") : "")
+          escapeCSV(report.last_visit ? " " + new Date(report.last_visit).toLocaleDateString("en-GB") : "")
         ].join(",");
       });
 

@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS templates (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_templates_name_category ON templates(name, category);
+
 CREATE TABLE IF NOT EXISTS reports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   report_number TEXT UNIQUE,

@@ -103,8 +103,8 @@ function CreateReportInner() {
   const [referralPhone, setReferralPhone] = useState("");
 
   // ── Master Image Adjustments ────────────────────────────────────────────────
-  const [masterBrightness, setMasterBrightness] = useState(70);
-  const [masterContrast, setMasterContrast] = useState(70);
+  const [masterBrightness, setMasterBrightness] = useState(120);
+  const [masterContrast, setMasterContrast] = useState(120);
 
   // 🔥 NEW: doctors selected for this report's footer
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -281,6 +281,15 @@ function CreateReportInner() {
       addToast("Please select at least one doctor", "error");
       return false;
     }
+
+    // Check if at least some procedure content or images are present
+    const hasContent = sections.some(s => s.content.trim() !== "");
+    const hasImages = images.length > 0;
+    if (!hasContent && !hasImages) {
+      addToast("Please add procedure content or at least one image", "error");
+      return false;
+    }
+
     return true;
   };
 
