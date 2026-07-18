@@ -2,6 +2,8 @@ const { app, BrowserWindow, protocol, net } = require("electron");
 const path = require("path");
 const { pathToFileURL } = require("url");
 const fs = require("fs");
+const serve = require("electron-serve");
+const loadURL = serve({ directory: path.join(__dirname, "..", "frontend", "out") });
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'endo', privileges: { bypassCSP: true, supportFetchAPI: true, secure: true, corsEnabled: true } }
@@ -50,9 +52,14 @@ async function createWindow() {
   });
 
   try {
-    const url = process.env.NEXT_URL || "http://localhost:3000";
-    console.log(`Loading URL: ${url}`);
-    await win.loadURL(url);
+    if (app.isPackaged) {
+      console.log("Loading static export from electron-serve...");
+      await loadURL(win);
+    } else {
+      const url = process.env.NEXT_URL || "http://localhost:3000";
+      console.log(`Loading URL: ${url}`);
+      await win.loadURL(url);
+    }
     console.log("URL loaded successfully");
   } catch (err) {
     console.error("Failed to load URL:", err);
