@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "./ui/Button";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const THEME = {
   navy: "#1a3a52",
@@ -24,6 +25,11 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Recovery Mode State
   const [isRecovering, setIsRecovering] = useState(false);
@@ -86,6 +92,10 @@ export default function LoginScreen() {
   const handleVerifyKey = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!username.trim()) {
+      setError("Please go back and enter the username you want to recover first");
+      return;
+    }
     if (!recoveryKey.trim()) {
       setError("Please enter your recovery key");
       return;
@@ -107,13 +117,17 @@ export default function LoginScreen() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!username.trim()) {
+      setError("Please enter the username you want to recover on the login screen first");
+      return;
+    }
     if (!newPassword || newPassword !== confirmPassword) {
       setError("Passwords do not match or are empty");
       return;
     }
     setIsSubmitting(true);
     try {
-      const res = await (window as any).api.resetAdminPassword(newPassword);
+      const res = await (window as any).api.resetUserPassword(username.trim(), newPassword);
       if (res.success) {
         setIsRecovering(false);
         setRecoveryStep(1);
@@ -219,32 +233,60 @@ export default function LoginScreen() {
                 <label style={{ display: "block", color: THEME.text, fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
                   New Password
                 </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  style={{
-                    width: "100%", padding: "12px 16px", border: `1.5px solid ${THEME.border}`,
-                    borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box"
-                  }}
-                  autoFocus
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    style={{
+                      width: "100%", padding: "12px 16px", border: `1.5px solid ${THEME.border}`,
+                      borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box",
+                      paddingRight: "40px"
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", color: THEME.muted,
+                      display: "flex", alignItems: "center", justifyContent: "center"
+                    }}
+                  >
+                    {showNewPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label style={{ display: "block", color: THEME.text, fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
                   Confirm Password
                 </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  style={{
-                    width: "100%", padding: "12px 16px", border: `1.5px solid ${THEME.border}`,
-                    borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box"
-                  }}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    style={{
+                      width: "100%", padding: "12px 16px", border: `1.5px solid ${THEME.border}`,
+                      borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box",
+                      paddingRight: "40px"
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", color: THEME.muted,
+                      display: "flex", alignItems: "center", justifyContent: "center"
+                    }}
+                  >
+                    {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
               </div>
               <Button variant="primary" style={{ padding: "14px", fontSize: "15px", marginTop: "8px", justifyContent: "center" }} disabled={isSubmitting} type="submit">
                 {isSubmitting ? "Resetting..." : "Reset Password"}
@@ -296,19 +338,33 @@ export default function LoginScreen() {
             <label style={{ display: "block", color: THEME.text, fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              style={{
-                width: "100%", padding: "12px 16px", border: `1.5px solid ${THEME.border}`,
-                borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box",
-                transition: "border-color 0.2s"
-              }}
-              onFocus={(e) => e.target.style.borderColor = THEME.teal}
-              onBlur={(e) => e.target.style.borderColor = THEME.border}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                style={{
+                  width: "100%", padding: "12px 16px", border: `1.5px solid ${THEME.border}`,
+                  borderRadius: "8px", fontSize: "14px", outline: "none", boxSizing: "border-box",
+                  transition: "border-color 0.2s",
+                  paddingRight: "40px"
+                }}
+                onFocus={(e) => e.target.style.borderColor = THEME.teal}
+                onBlur={(e) => e.target.style.borderColor = THEME.border}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer", color: THEME.muted,
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
             {!isFirstTime && (
               <div style={{ textAlign: "right", marginTop: "4px" }}>
                 <a href="#" onClick={(e) => { e.preventDefault(); setIsRecovering(true); setError(""); setSuccessMsg(""); }} style={{ color: THEME.teal, fontSize: "12px", fontWeight: "600", textDecoration: "none" }}>

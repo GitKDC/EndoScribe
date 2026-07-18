@@ -116,18 +116,18 @@ const userRepo = {
     });
   },
 
-  resetAdminPassword: (newPassword) => {
+  resetUserPassword: (username, newPassword) => {
     return new Promise((resolve, reject) => {
-      // Find the admin user (or any primary user). For simplicity, we update the user with role 'admin'
-      db.get("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1", [], (err, user) => {
+      if (!username) return reject(new Error("Username is required to reset password"));
+      
+      db.get("SELECT id FROM users WHERE username = ?", [username], (err, user) => {
         if (err) return reject(err);
-        if (!user) return reject(new Error("No admin user found to reset"));
-
+        if (!user) return reject(new Error(`User '${username}' not found. Please enter a valid username in the login screen before resetting.`));
+        
         const salt = crypto.randomBytes(16).toString("hex");
         const hash = hashPassword(newPassword, salt);
-
-        db.run("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?", [hash, salt, user.id], function(err) {
-          if (err) reject(err);
+        db.run("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?", [hash, salt, user.id], function(updateErr) {
+          if (updateErr) reject(updateErr);
           else resolve({ success: true, changes: this.changes });
         });
       });

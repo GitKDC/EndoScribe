@@ -175,27 +175,27 @@ export default function Dashboard() {
           }} />
 
           <div style={{ position: "relative" }}>
-            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", letterSpacing: "-0.3px" }}>
+            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "600", letterSpacing: "-0.3px" }}>
               {greeting()}, Dr. Chaudhari
             </h1>
-            <p style={{ margin: "8px 0 20px", color: "rgba(255,255,255,0.7)", fontSize: "14px" }}>
-              Shobha Hospital &amp; Superspeciality Gastroenterology Centre
+            <p style={{ margin: "8px 0 20px", color: "rgba(255,255,255,0.7)", fontSize: "13px", fontStyle: "italic" }}>
+              Welcome to EndoScribe - Your Digital Endoscopy Reporting Workspace
             </p>
            <div style={{ display: "flex", gap: "16px" }}>
                <button
               onClick={() => router.push("/create-report")}
               style={{
-                padding: "11px 24px",
+                padding: "8px 20px",
                 background: THEME.teal,
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: "600",
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: "6px",
                 boxShadow: "0 4px 14px rgba(13,148,136,0.4)",
               }}
             >

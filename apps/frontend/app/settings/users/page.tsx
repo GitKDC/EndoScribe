@@ -189,12 +189,13 @@ export default function UserManagementPage() {
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 1000
-        }}>
+          zIndex: 9999, pointerEvents: "auto"
+        }} onClick={() => setShowModal(false)}>
           <div style={{
             background: "white", padding: "32px", borderRadius: "16px",
-            width: "100%", maxWidth: "400px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
-          }}>
+            width: "100%", maxWidth: "400px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            pointerEvents: "auto", userSelect: "auto", WebkitAppRegion: "no-drag"
+          }} onClick={e => e.stopPropagation()}>
             <h2 style={{ color: THEME.navy, margin: "0 0 24px", fontSize: "20px" }}>Create New User</h2>
             
             <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

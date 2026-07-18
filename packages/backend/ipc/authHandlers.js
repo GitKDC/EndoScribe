@@ -78,12 +78,12 @@ function registerAuthHandlers() {
     }
   });
 
-  ipcMain.handle("auth:resetAdminPassword", async (event, newPassword) => {
+  ipcMain.handle("auth:resetUserPassword", async (event, username, newPassword) => {
     try {
-      const result = await userRepo.resetAdminPassword(newPassword);
+      const result = await userRepo.resetUserPassword(username, newPassword);
       return { success: true, data: result };
     } catch (error) {
-      console.error("Error resetting admin password:", error);
+      console.error("Error resetting user password:", error);
       return { success: false, message: error.message };
     }
   });

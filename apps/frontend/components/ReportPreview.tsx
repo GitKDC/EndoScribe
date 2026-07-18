@@ -228,7 +228,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               </p>
             )}
             <p style={{
-              margin: 0, fontSize: "12px", fontWeight: "700",
+              margin: 0, fontSize: "12px", fontWeight: "800",
               color: "#333", border: "1px solid #999",
               padding: "2px 8px", borderRadius: "3px",
               whiteSpace: "nowrap",
@@ -257,7 +257,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
               style={{
                 margin: 0,
                 fontSize: "15px",
-                fontWeight: "900",
+                fontWeight: "800",
                 textTransform: "uppercase",
                 display: "inline-block",
                 border: "1.5px solid #333",

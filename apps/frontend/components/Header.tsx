@@ -28,8 +28,8 @@ export default function Header() {
       zIndex: 10
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <span style={{ fontSize: "16px", fontWeight: "700", letterSpacing: "0.5px" }}>
-          EndoScribe
+        <span style={{ fontSize: "16px", fontWeight: "600", letterSpacing: "0.5px" }}>
+          ENDOSCRIBE
         </span>
         {time && (
           <span style={{ 
@@ -48,10 +48,14 @@ export default function Header() {
         )}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-
-        <span style={{ fontSize: "14px", fontWeight: "600" }}>
-          Dr. Hrushikesh Chaudhari
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+          <span style={{ fontSize: "15px", fontWeight: "600", lineHeight: "1.2" }}>
+            Dr. Hrushikesh Chaudhari
+          </span>
+          <span style={{ fontSize: "11px", fontWeight: "500", color: "#cbd5e1", marginTop: "2px" }}>
+            Consultant Gastroenterologist, Therapeutic Endoscopist & Liver Specialist
+          </span>
+        </div>
       </div>
     </div>
   );

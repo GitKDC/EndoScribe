@@ -15,10 +15,11 @@ const daysBetween = (dateStr, now = new Date()) => {
 };
 
 // ─── Core zip builder ────────────────────────────────────────────────────────
-const createZip = (destPath, dbPath, imagesPath) => {
+const createZip = (destPath, dbPath, imagesPath, reportsPath) => {
   return new Promise((resolve, reject) => {
     const output  = fs.createWriteStream(destPath);
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const opts = { zlib: { level: 9 } };
+    const archive = archiver.ZipArchive ? new archiver.ZipArchive(opts) : archiver("zip", opts);
 
     archive.on("error", reject);
 
@@ -43,6 +44,11 @@ const createZip = (destPath, dbPath, imagesPath) => {
       archive.directory(imagesPath, "images");
     }
 
+    // Add reports folder (if it exists)
+    if (reportsPath && fs.existsSync(reportsPath)) {
+      archive.directory(reportsPath, "reports");
+    }
+
     // Metadata JSON
     archive.append(
       JSON.stringify({
@@ -62,9 +68,11 @@ function registerBackupHandlers() {
   ipcMain.handle("create-backup", async () => {
     const dbPath     = getDatabasePath();
     const imagesPath = getImagesBasePath();
+    const reportsPath = getReportsBasePath();
 
     console.log("📦 Backup DB path:", dbPath);
     console.log("📦 Backup images path:", imagesPath);
+    console.log("📦 Backup reports path:", reportsPath);
     console.log("📦 DB exists:", fs.existsSync(dbPath));
 
     if (!fs.existsSync(dbPath)) {
@@ -80,7 +88,7 @@ function registerBackupHandlers() {
 
     if (canceled || !filePath) return null;
 
-    const bytes = await createZip(filePath, dbPath, imagesPath);
+    const bytes = await createZip(filePath, dbPath, imagesPath, reportsPath);
     await setSetting("last_backup_date", new Date().toISOString());
 
     console.log(`✅ Manual backup saved: ${filePath} (${bytes} bytes)`);
@@ -99,6 +107,7 @@ function registerBackupHandlers() {
 
     const dbPath     = getDatabasePath();
     const imagesPath = getImagesBasePath();
+    const reportsPath = getReportsBasePath();
 
     if (!fs.existsSync(dbPath)) return { skipped: true, reason: "no_db" };
 
@@ -108,7 +117,7 @@ function registerBackupHandlers() {
     const date     = new Date().toISOString().split("T")[0];
     const destPath = path.join(autoDir, `AutoBackup_${date}.zip`);
 
-    await createZip(destPath, dbPath, imagesPath);
+    await createZip(destPath, dbPath, imagesPath, reportsPath);
     await setSetting("last_backup_date", new Date().toISOString());
 
     // Keep only last 3 auto-backups

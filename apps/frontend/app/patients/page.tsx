@@ -222,17 +222,33 @@ export default function PatientsPage() {
 
       {/* VIEW REPORT MODAL (reusing structure from Reports page) */}
       {viewReport && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.6)", zIndex: 2000, display: "flex", justifyContent: "center", alignItems: "flex-start", overflowY: "auto", padding: "40px 0" }}>
-          <div style={{ backgroundColor: "#e8eaed", width: "95vw", maxWidth: "950px", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
-            <div style={{ width: "100%", boxSizing: "border-box", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", background: "white", borderBottom: "1px solid #ddd", position: "sticky", top: 0, zIndex: 10 }}>
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", zIndex: 9999, 
+          display: "flex", justifyContent: "center", alignItems: "center"
+        }}>
+          <div style={{
+            background: "#f4f7f6", borderRadius: "12px", height: "95vh", overflowY: "auto",
+            display: "flex", flexDirection: "column", alignItems: "center", width: "95vw", maxWidth: "950px",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.3)"
+          }}>
+            {/* Modal Header */}
+            <div style={{ 
+              width: "100%", boxSizing: "border-box", display: "flex", justifyContent: "space-between", alignItems: "center", 
+              padding: "20px 40px", background: "white", borderBottom: "1px solid #ddd", position: "sticky", top: 0, zIndex: 10
+            }}>
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <h3 style={{ margin: 0, color: "#1a3a52", fontSize: "20px", fontWeight: "800" }}>Report Preview</h3>
-                <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "700" }}>{viewReport.report_number}</span>
+                <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: "20px", fontSize: "13px", fontWeight: "700" }}>
+                  {viewReport.report_number}
+                </span>
               </div>
-              <button onClick={() => setViewReport(null)} style={{ padding: "8px 16px", backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "14px" }}>Close Preview</button>
+              <Button variant="secondary" onClick={() => setViewReport(null)}>Close</Button>
             </div>
-            <div style={{ padding: "40px", display: "flex", justifyContent: "center" }}>
-              <div style={{ boxShadow: "0 10px 30px rgba(0,0,0,0.15)", background: "white" }}>
+
+            {/* Modal Body (A4 Report) */}
+            <div style={{ padding: "30px", width: "100%", display: "flex", justifyContent: "center" }}>
+              <div style={{ zoom: 0.85, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", borderRadius: "2px", overflow: "hidden", background: "white" }}>
                 <ReportPreview
                   patientName={viewReport.patient_name}
                   patientAge={`${viewReport.age} Yrs / ${viewReport.gender}`}

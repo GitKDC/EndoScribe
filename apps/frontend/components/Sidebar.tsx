@@ -85,10 +85,10 @@ export default function Sidebar() {
           }}><FiHeart size={22} color="#fff" /></div>
 
           <div>
-            <div style={{ fontSize: "18px", fontWeight: "700", lineHeight: 1.2, color: "#d2e6f3", letterSpacing: "0.2px", whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: "17px", fontWeight: "700", lineHeight: 1.2, color: "#d2e6f3", letterSpacing: "0.2px", whiteSpace: "nowrap" }}>
               Shobha Hospital
             </div>
-            <div style={{ fontSize: "13px", color: "#7dd3fc", lineHeight: 1.3, marginTop: "2px" }}>
+            <div style={{ fontSize: "12px", color: "#7dd3fc", lineHeight: 1.3, marginTop: "2px" }}>
               & Superspeciality Gastroenterology Centre
             </div>
           </div>
