@@ -194,7 +194,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
-          padding: "12px 24px 0 44px", // Increased left padding for hole punching
+          padding: "12px 8px 0 60px", // Increased left padding for hole punching, decreased right for images
           overflow: "hidden",
         }}
       >
@@ -207,6 +207,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             alignItems: "center",
             marginBottom: "8px",
             paddingBottom: "6px",
+            paddingRight: "16px", // Prevent date border from being sliced by printer
             borderBottom: "1.5px solid #ddd",
           }}
         >
@@ -428,7 +429,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       <div
         style={{
           flexShrink: 0,
-          padding: "8px 24px 8px 44px", // Increased left padding for hole punching
+          padding: "8px 8px 24px 60px", // Increased bottom padding to prevent printer slicing
           borderTop: "1px solid #ccc",
           display: "flex",
           justifyContent: "space-between",

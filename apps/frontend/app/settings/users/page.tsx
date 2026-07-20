@@ -194,7 +194,7 @@ export default function UserManagementPage() {
           <div style={{
             background: "white", padding: "32px", borderRadius: "16px",
             width: "100%", maxWidth: "400px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-            pointerEvents: "auto", userSelect: "auto", WebkitAppRegion: "no-drag"
+            pointerEvents: "auto", userSelect: "auto"
           }} onClick={e => e.stopPropagation()}>
             <h2 style={{ color: THEME.navy, margin: "0 0 24px", fontSize: "20px" }}>Create New User</h2>
             

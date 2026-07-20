@@ -121,6 +121,53 @@ function CreateReportInner() {
     { title: string; content: string; highlight?: boolean }[]
   >([]);
 
+  // ── Auto-Save Draft ──────────────────────────────────────────────────────────
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
+
+  useEffect(() => {
+    try {
+      const draftStr = localStorage.getItem("endoscribe_draft_report");
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        if (draft.patientName) setPatientName(draft.patientName);
+        if (draft.patientId) setPatientId(draft.patientId);
+        if (draft.patientPhone) setPatientPhone(draft.patientPhone);
+        if (draft.patientAge) setPatientAge(draft.patientAge);
+        if (draft.patientCity) setPatientCity(draft.patientCity);
+        if (draft.reportDate) setReportDate(draft.reportDate);
+        if (draft.reportType) setReportType(draft.reportType);
+        if (draft.prefix) setPrefix(draft.prefix);
+        if (draft.referralName) setReferralName(draft.referralName);
+        if (draft.referralId) setReferralId(draft.referralId);
+        if (draft.referralPhone) setReferralPhone(draft.referralPhone);
+        if (draft.selectedDoctorIds) setSelectedDoctorIds(draft.selectedDoctorIds);
+        if (draft.sections && draft.sections.length > 0) setSections(draft.sections);
+      }
+    } catch (e) {
+      console.error("Failed to restore draft", e);
+    } finally {
+      setIsDraftRestored(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftRestored) return;
+    const hasData = patientName || patientPhone || (sections.length > 0 && sections.some(s => s.content.trim() !== ""));
+    if (!hasData) return;
+
+    const draftStr = JSON.stringify({
+      patientName, patientId, patientPhone, patientAge, patientCity,
+      reportDate, reportType, prefix, referralName, referralId, referralPhone,
+      selectedDoctorIds, sections
+    });
+    localStorage.setItem("endoscribe_draft_report", draftStr);
+  }, [
+    isDraftRestored,
+    patientName, patientId, patientPhone, patientAge, patientCity,
+    reportDate, reportType, prefix, referralName, referralId, referralPhone,
+    selectedDoctorIds, sections
+  ]);
+
   // Mount animation
   useEffect(() => { setMounted(true); }, []);
 
@@ -151,9 +198,10 @@ function CreateReportInner() {
         if (!data || data.length === 0) throw new Error("No templates found");
         setTemplates(data);
         
-        // Auto-fill sections for initType
+        // Auto-fill sections for initType if no draft exists
         const cat = cats?.find((c: any) => c.name === initType);
-        if (cat) {
+        const hasDraft = !!localStorage.getItem("endoscribe_draft_report");
+        if (cat && !hasDraft) {
           setSections([...cat.default_sections]);
         }
       } catch (err) {
@@ -236,6 +284,7 @@ function CreateReportInner() {
     // Reset doctor selection back to defaults
     const defaults = doctors.filter((d) => d.is_default).map((d) => d.id);
     setSelectedDoctorIds(defaults);
+    localStorage.removeItem("endoscribe_draft_report");
     addToast("Form cleared", "success");
   };
 

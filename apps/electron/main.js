@@ -2,7 +2,7 @@ const { app, BrowserWindow, protocol, net } = require("electron");
 const path = require("path");
 const { pathToFileURL } = require("url");
 const fs = require("fs");
-const serve = require("electron-serve");
+const serve = require("electron-serve").default || require("electron-serve");
 const loadURL = serve({ directory: path.join(__dirname, "..", "frontend", "out") });
 
 protocol.registerSchemesAsPrivileged([
@@ -26,6 +26,8 @@ async function createWindow() {
   win = new BrowserWindow({
     width: 1400,
     height: 900,
+    title: "EndoScribe",
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -35,6 +37,8 @@ async function createWindow() {
       webSecurity: false,
     },
   });
+  
+  win.removeMenu();
 
   if (process.env.DEBUG) {
     win.webContents.openDevTools();
